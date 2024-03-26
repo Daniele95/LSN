@@ -3,8 +3,8 @@ CFLAGS = -Wall -O3 --std=c++11
 
 main.exe : main.o random.o
 	$(CC) random.o main.o -o main.exe
-main.o : main.cpp
-	$(CC) -c main.cpp -o main.o $(CFLAGS)
+main.o : commesso.cpp
+	$(CC) -c commesso.cpp -o main.o $(CFLAGS)
 random.o : ../random/random.cpp ../random/random.h
 	$(CC) -c ../random/random.cpp -o random.o $(CFLAGS)
 clean :

@@ -28,6 +28,8 @@ public:
   void SetRandom(int * , int, int);
   // Method to save the seed to a file
   void SaveSeed();
+  void SetSeed();
+  void SetPrimesCouple(int n);
   // Method to generate a random number in the range [0,1)
   double Rannyu(void);
   // Method to generate a random number in the range [min,max)

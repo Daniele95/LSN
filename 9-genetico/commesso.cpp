@@ -15,26 +15,28 @@ int Pbc(int j);
 rowvec shift(rowvec path);
 
 int populationSize = 10;
-int pathLength = 20;
-int generations = 100;
+int pathLength = 5;
+int generations = 1000;
 rowvec fittests(generations);
 
 int main() {
 
-        // Read seed for random numbers
+        /*// Read seed for random numbers
         int p1, p2;
-        ifstream Primes("Primes");
+        ifstream Primes("../random/Primes");
         Primes >> p1 >> p2;
         Primes.close();
 
-        ifstream input("seed.in");
+        ifstream input("../random/seed.in");
         input >> seed[0] >> seed[1] >> seed[2] >> seed[3];
         rnd.SetRandom( seed, p1, p2 );
         input.close();
-	//
+	//*/
+	rnd.SetSeed();
+   	rnd.SetPrimesCouple(23);
 
 	cout << "evolvo " << populationSize << " cammini "
-		<< " di lunghezza " << pathLength << endl;
+	     << " di lunghezza " << pathLength << endl;
 
 	// model path
 	rowvec path = linspace<rowvec>(1,pathLength,pathLength);
@@ -56,10 +58,11 @@ int main() {
 	uvec indices = sort_index(costs);	
 	paths = paths.rows(indices);
 	costs = costs(indices);
-	cout << paths.row(0) << endl;
+	cout << "cammino più economico" << endl
+	     << paths.row(0) << endl;
 
 	cout << "evoluzione per " << generations
-	       	<< " generazioni" <<endl;
+	     << " generazioni" << endl;
 
 	for (int k = 0; k<generations; k++) {
 
@@ -79,12 +82,16 @@ int main() {
 		if( !check(paths) ) cout <<
 			"qualche cammino non soddisfa"<<
 			"le condizioni al contorno" << endl;
+		
 		fittests(k) = int(costs(0));
 	}
-
-	fittests.save("costs.txt",raw_ascii);
-
-	cout << paths.row(0)<< endl;
+	imat ipaths = conv_to<imat>::from(paths);
+	ipaths.save("paths.txt",raw_ascii);
+	ivec icosts = conv_to<ivec>::from(costs);
+	icosts.save("costs.txt",raw_ascii);
+	
+	cout << "cammino più economico" << endl
+	     << paths.row(0)<< endl;
 	return 0;
 
 }
@@ -113,7 +120,7 @@ rowvec swap(rowvec path) {
 	return path;
 }
 
-
+// costo di un cammino su un cerchio
 double cost(rowvec path) {
 	double cost = 0.;
 	for (int i = 1; i<pathLength; i++)
@@ -132,7 +139,7 @@ rowvec shift(rowvec path) {
 		path[i]=pathTemp[Pbc(i-m)];
 	
 	}
-	
+	return path;
 }
 
 

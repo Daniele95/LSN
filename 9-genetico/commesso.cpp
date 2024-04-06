@@ -21,12 +21,13 @@ class popolazione {
 };
 
 
-float pswap=1;
-float pshift=1;
-float ppermut=0.5;
-float pinversion=0.5;
-float avversitaAmbientale = 5; //esponente per la selezione 
-float pcrossover=0.5;
+float avversitaAmbientale =3; //esponente per la selezione 
+float pMutazione=1.;
+float pScambio=0.1*pMutazione;
+float pTrasponi=0.1*pMutazione;
+float pScambiaSequenze=0.1*pMutazione;
+float pInverti=0.1*pMutazione;
+//float pRiproduzione=0.7;
 
 bool check(mat);
 void ordinaCammini();
@@ -35,19 +36,23 @@ double dist(colvec,colvec);
 int Pbc(int j);
 void generateMap();
 
+rowvec muta(rowvec);
 rowvec swap(rowvec);
 rowvec trasponi_sottosequenza(rowvec);
 rowvec scambia_sottosequenze(rowvec);
 rowvec inverti_sottosequenza(rowvec);
 mat riproduci(rowvec, rowvec);
 
-int popolazione = 10;
-int Ncities = 10;
-int generations = 30;
-rowvec fittests(generations);
+int popolazione = 300;
+int Ncities = 34;
+int generazioni = 1000;
+rowvec fittests(generazioni);
 
 // una generazione è la popolazione di cammini a un certo tempo,
 // quindi una lista di cammini
+// un cammino è un vettore riga. 
+// per fare un array di cammini, li incolonno
+
 mat generazione(popolazione, Ncities);
 colvec lunghezze(popolazione);
 
@@ -56,57 +61,51 @@ mat mappa(Ncities,2); // N righe,2 colonne,
 
 int main() {
 
-	rnd.SetSeed();
-   	rnd.SetPrimesCouple(23);
+   rnd.SetSeed();
+   rnd.SetPrimesCouple(23);
    	
-   	generateMap();
+   generateMap();
 	
-	cout << "evolvo " << popolazione << " cammini "
+   cout << "evolvo " << popolazione << " cammini "
 	     << " di lunghezza " << Ncities << endl;
 
-	// model path
-	rowvec path = linspace<rowvec>(0,Ncities-1,Ncities);
+   // cammino iniziale
+   rowvec cammino = linspace<rowvec>(0,Ncities-1,Ncities);
 
-	// popola la generazione iniziale di cammini
-	for (int i=0;i<popolazione;i++) {
-		rowvec newPath = swap(path);
-		generazione.row(i) = newPath;
-		lunghezze(i) = lunghezzaCammino(newPath,mappa);
-	}
+   // popola la generazione iniziale di cammini
+   for (int i=0;i<popolazione;i++) {
+      rowvec nuovoCammino = swap(cammino);
+      generazione.row(i) = nuovoCammino;
+      lunghezze(i) = lunghezzaCammino(nuovoCammino,mappa);
+   }
 	
-	generazione = generazione.rows(sort_index(lunghezze));
-	//lunghezze = sort(lunghezze);
+   generazione = generazione.rows(sort_index(lunghezze));
 	
-	cout << "cammino più economico" << endl
-	     << generazione.row(0) << endl;
+   cout << "cammino più economico" << endl
+      << generazione.row(0) << endl;
 
-	cout << "evoluzione per " << generations
-	     << " generazioni" << endl;
+   cout << "evoluzione per " << generazioni
+      << " generazioni" << endl;
 
    // ciclo sulle generazioni
-   for (int k = 0; k<generations; k++) {
+   for (int k = 0; k<generazioni; k++) {
 
-      // creo la generazione successiva: seleziono
-      // i cammini più brevi della generazione attuale
+      // creo la generazione successiva
       mat nuovaGenerazione = generazione;
       
+      // riempio la nuova generazione con i cammini
+      // più brevi della vecchia, fatti riprodurre
+      // e mutati
+      for (int i=0; i<popolazione/2;i++){
       
-      // li muto 
-      // e questi vanno a formare la generazione successiva
-      
-	// riempio la nuova generazione:
-      for (int i=0; i<popolazione;i++){
-         rowvec nuovoNato =
-            generazione.row(int(popolazione*
+         rowvec padre = generazione.row(int(popolazione*
                pow(rnd.Rannyu(),avversitaAmbientale)));
-         //muto con  probabilita p
-         if(rnd.Rannyu()<pswap) 
-            generazione.row(i) = swap(generazione.row(i));  
-         if(rnd.Rannyu()<pshift) 
-            generazione.row(i) = inverti_sottosequenza(generazione.row(i));
-		  
-       
-         nuovaGenerazione.row(i)=generazione.row(i);
+         rowvec madre = generazione.row(int(popolazione*
+               pow(rnd.Rannyu(),avversitaAmbientale)));
+         mat prole = riproduci( padre, madre );
+         nuovaGenerazione.row(i)=muta(prole.row(0));
+         nuovaGenerazione.row(i+1)=muta(prole.row(1));
+    
       }
       generazione = nuovaGenerazione;
 		
@@ -114,31 +113,32 @@ int main() {
       for (int i=0; i<popolazione;i++) 
          lunghezze(i) = lunghezzaCammino(generazione.row(i),mappa);
       generazione = generazione.rows(sort_index(lunghezze));
+      lunghezze=sort(lunghezze);
 		
       if( !check(generazione) ) cout <<
       "qualche cammino non soddisfa"<<
       "le condizioni al contorno" << endl;
-		
+
       fittests(k) = int(lunghezze(0));
    }
-	colvec fitteststr=fittests.t();
-	fitteststr.save("fittests.txt",raw_ascii);
+   colvec fitteststr=fittests.t();
+   fitteststr.save("fittests.txt",raw_ascii);
 	
-	imat ipaths = conv_to<imat>::from(generazione);
-	ipaths.save("paths.txt",raw_ascii);
+   imat ipaths = conv_to<imat>::from(generazione);
+   ipaths.save("paths.txt",raw_ascii);
 	
-	ivec ilengths = conv_to<ivec>::from(lunghezze);
-	ilengths.save("lengths.txt",raw_ascii);
+   ivec ilengths = conv_to<ivec>::from(lunghezze);
+   ilengths.save("lengths.txt",raw_ascii);
 	
-	cout << "cammino più economico" << endl
-	     << generazione.row(0)<< endl;
-	ivec iPath = conv_to<ivec>::from(generazione.row(0));
-	iPath.save("Path.txt",raw_ascii);
+   cout << "cammino più economico" << endl
+      << generazione.row(0)<< endl;
+   ivec iPath = conv_to<ivec>::from(generazione.row(0));
+   iPath.save("Path.txt",raw_ascii);
 	
-	mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
-	//mappaOrdinata.save("cities1.txt",raw_ascii);
+   mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
+   mappaOrdinata.save("cities1.txt",raw_ascii);
 	
-	return 0;
+   return 0;
 
 }
 
@@ -201,6 +201,20 @@ void generateMap(){
 // and the mutated sequence must still be a path
 
 // swap two cities
+
+rowvec muta( rowvec cammino){
+
+         if(rnd.Rannyu()<pScambio) 
+            cammino = swap(cammino);  
+         if(rnd.Rannyu()<pTrasponi) 
+            cammino = trasponi_sottosequenza(cammino);
+         if(rnd.Rannyu()<pScambiaSequenze) 
+            cammino = scambia_sottosequenze(cammino);
+         if(rnd.Rannyu()<pInverti) 
+            cammino = inverti_sottosequenza(cammino);
+         return cammino;
+         
+}
 
 rowvec swap(rowvec path) {
 
@@ -290,5 +304,5 @@ mat riproduci(rowvec camminoPadre, rowvec camminoMadre) {
             }
         }
     }
-    return join_rows(camminoPadre, camminoMadre);
+    return join_vert(camminoPadre, camminoMadre);
 }

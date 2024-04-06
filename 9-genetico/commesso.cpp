@@ -4,149 +4,149 @@
 #include <cmath>
 #include "commesso.h"
 #include <armadillo>
+#include <unordered_map>
 
 using namespace arma;
 using namespace std;
+
+
+class cammino {
+
+};
+class popolazione {
+    int N;
+
+    void displayInfo() {
+    }
+};
+
 
 float pswap=1;
 float pshift=1;
 float ppermut=0.5;
 float pinversion=0.5;
-float p = 5; //esponente per la selezione 
+float avversitaAmbientale = 5; //esponente per la selezione 
 float pcrossover=0.5;
 
-rowvec swap(rowvec);
 bool check(mat);
-double length(rowvec,int,mat);
+void ordinaCammini();
+double lunghezzaCammino(rowvec cammino,mat mappa);
 double dist(colvec,colvec);
 int Pbc(int j);
-rowvec shift(rowvec path);
+void generateMap();
 
-int populationSize = 500;
-int Ncities = 20;
-int generations = 600;
+rowvec swap(rowvec);
+rowvec trasponi_sottosequenza(rowvec);
+rowvec scambia_sottosequenze(rowvec);
+rowvec inverti_sottosequenza(rowvec);
+mat riproduci(rowvec, rowvec);
+
+int popolazione = 10;
+int Ncities = 10;
+int generations = 30;
 rowvec fittests(generations);
 
-// array to store paths and their lengths
-mat paths(populationSize, Ncities);
-colvec lengths(populationSize);
+// una generazione è la popolazione di cammini a un certo tempo,
+// quindi una lista di cammini
+mat generazione(popolazione, Ncities);
+colvec lunghezze(popolazione);
 
 // random cities positions
-mat cities(2,Ncities); // 2 righe, N colonne
+mat mappa(Ncities,2); // N righe,2 colonne, 
 
 int main() {
 
 	rnd.SetSeed();
    	rnd.SetPrimesCouple(23);
    	
-	colvec city = linspace<colvec>(1,2,2);
-	/*
-	// generate random cities in square 1x1:
-	for (int i=0;i<Ncities;i++) {
-		city(0)=rnd.Rannyu();
-		city(1)=rnd.Rannyu();
-		cities.col(i)=city;
-	}
-	*/
-	// generate random cities on circle:
-	double angle;
-	for (int i=0;i<Ncities;i++) {
-		angle=rnd.Rannyu()*6.28;
-		city(0)=cos(angle);
-		city(1)=sin(angle);
-		cities.col(i)=city;
-	}
+   	generateMap();
 	
-
-	mat citiestr = cities.t(); //transpose, for read in python
-	citiestr.save("cities0.txt",raw_ascii);
-	
-	cout << "evolvo " << populationSize << " cammini "
+	cout << "evolvo " << popolazione << " cammini "
 	     << " di lunghezza " << Ncities << endl;
 
 	// model path
 	rowvec path = linspace<rowvec>(0,Ncities-1,Ncities);
 
-	// randomly create
-	// population of paths
-	for (int i=0;i<populationSize;i++) {
+	// popola la generazione iniziale di cammini
+	for (int i=0;i<popolazione;i++) {
 		rowvec newPath = swap(path);
-		paths.row(i) = newPath;
-		lengths(i) = length(newPath,Ncities,cities);
+		generazione.row(i) = newPath;
+		lunghezze(i) = lunghezzaCammino(newPath,mappa);
 	}
 	
-
-	// sort paths with length
-	uvec indices = sort_index(lengths);	
-	paths = paths.rows(indices);
-	lengths = lengths(indices);
+	generazione = generazione.rows(sort_index(lunghezze));
+	//lunghezze = sort(lunghezze);
+	
 	cout << "cammino più economico" << endl
-	     << paths.row(0) << endl;
+	     << generazione.row(0) << endl;
 
 	cout << "evoluzione per " << generations
 	     << " generazioni" << endl;
 
-	for (int k = 0; k<generations; k++) {
+   // ciclo sulle generazioni
+   for (int k = 0; k<generations; k++) {
 
-		//mutazioni.
-		//ciclo su tutti i cammini della generazione:
-		for (int i=0; i<int(paths.n_rows);i++){
-		  //muto con  probabilita p
-		  if(rnd.Rannyu()<pswap)
-		  	paths.row(i) = swap(paths.row(i));  
-		  if(rnd.Rannyu()<pshift)
-		  	paths.row(i) = shift(paths.row(i));
-		  //ricalcolo la lunghezza:
-		  lengths(i) = length(paths.row(i),
-		    		      Ncities,cities);
-		}
+      // creo la generazione successiva: seleziono
+      // i cammini più brevi della generazione attuale
+      mat nuovaGenerazione = generazione;
+      
+      
+      // li muto 
+      // e questi vanno a formare la generazione successiva
+      
+	// riempio la nuova generazione:
+      for (int i=0; i<popolazione;i++){
+         rowvec nuovoNato =
+            generazione.row(int(popolazione*
+               pow(rnd.Rannyu(),avversitaAmbientale)));
+         //muto con  probabilita p
+         if(rnd.Rannyu()<pswap) 
+            generazione.row(i) = swap(generazione.row(i));  
+         if(rnd.Rannyu()<pshift) 
+            generazione.row(i) = inverti_sottosequenza(generazione.row(i));
+		  
+       
+         nuovaGenerazione.row(i)=generazione.row(i);
+      }
+      generazione = nuovaGenerazione;
 		
-		// randomly select fit individuals
-		// for reproduction
-		// più alzo l'esponente, più vengono privilegiati 
-		// i più fit
-		int j = int(populationSize*pow(rnd.Rannyu(),p));
+      // ordino la generazione in base alla lunghezza
+      for (int i=0; i<popolazione;i++) 
+         lunghezze(i) = lunghezzaCammino(generazione.row(i),mappa);
+      generazione = generazione.rows(sort_index(lunghezze));
 		
-		// sort generation for fitness
+      if( !check(generazione) ) cout <<
+      "qualche cammino non soddisfa"<<
+      "le condizioni al contorno" << endl;
 		
-		uvec indices = sort_index(lengths);	
-		paths = paths.rows(indices);
-		lengths = lengths(indices);	
-		
-		if( !check(paths) ) cout <<
-			"qualche cammino non soddisfa"<<
-			"le condizioni al contorno" << endl;
-		
-		fittests(k) = int(lengths(0));
-	}
+      fittests(k) = int(lunghezze(0));
+   }
 	colvec fitteststr=fittests.t();
 	fitteststr.save("fittests.txt",raw_ascii);
 	
-	imat ipaths = conv_to<imat>::from(paths);
+	imat ipaths = conv_to<imat>::from(generazione);
 	ipaths.save("paths.txt",raw_ascii);
 	
-	ivec ilengths = conv_to<ivec>::from(lengths);
+	ivec ilengths = conv_to<ivec>::from(lunghezze);
 	ilengths.save("lengths.txt",raw_ascii);
 	
 	cout << "cammino più economico" << endl
-	     << paths.row(0)<< endl;
-	ivec iPath = conv_to<ivec>::from(paths.row(0));
+	     << generazione.row(0)<< endl;
+	ivec iPath = conv_to<ivec>::from(generazione.row(0));
 	iPath.save("Path.txt",raw_ascii);
 	
-	uvec sorted = sort_index(paths.row(0));	
-	mat citiessorted = cities.cols(sorted);	
-	mat citiessortedtr = citiessorted.t();
-	citiessortedtr.save("cities1.txt",raw_ascii);
+	mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
+	//mappaOrdinata.save("cities1.txt",raw_ascii);
 	
 	return 0;
 
 }
 
-bool check(mat paths) {
+bool check(mat generazione) {
 
 	bool result = true;
-	for (int i=0; i<populationSize; i++) { 
-		rowvec riga = paths.row(i);
+	for (int i=0; i<popolazione; i++) { 
+		rowvec riga = generazione.row(i);
 		rowvec 	unici = unique(riga);
 		result = ( unici.n_elem == riga.n_elem);
 	}
@@ -154,166 +154,141 @@ bool check(mat paths) {
 
 }
 
+double lunghezzaCammino(rowvec cammino, mat mappa) {
 
-// swap two cities in the path
-// keeping the first in place
-rowvec swap(rowvec path) {
-	int index1 = floor(rnd.Rannyu(1,Ncities));
-	int index2 = floor(rnd.Rannyu(1,Ncities));
-	int temp = path[index1];
-	path[index1] = path[index2];
-	path[index2] = temp;
-	return path;
+   double lunghezza = 0.;
+   for (int i = 1; i<Ncities; i++) // mappa.row(cammino[i]) è
+   	// l'i-esima città visitata dal cammino
+      lunghezza += norm(mappa.row(cammino[i])-mappa.row(cammino[i-1]));
+   lunghezza += norm(mappa.row(cammino[0])-mappa.row(cammino[Ncities-1]));
+   return lunghezza;
+   
 }
-
-
-/* creo matrice di città (x e y), 
-la riempio con numeri casuali tra 0 e 1, 
-e calcolo la funzione lunghezza con la distanza tra gli elementi
-della matrice valutata alla posizione path[i]
-*/
-
-// costo di un cammino su un cerchio
-double length(rowvec path,int Ncities, mat cities) {
-	double length = 0.;
-	for (int i = 1; i<Ncities; i++)
-		length += dist(
-		  cities.col(path[i]),cities.col(path[i-1])
-		);
-		
-	length += dist(
-	  cities.col(path[0]),cities.col(path[Ncities-1])
-	);
-	return length;
-}
-double dist(colvec city1, colvec city2){
-	return pow((city1(0)-city2(0)),2)+
-		pow((city1(1)-city2(1)),2);
-}
-
 
 int Pbc(int j) {
 	if(j>Ncities-1) return j%Ncities+1;
 	return j;
 }
  
- 
-// Mutazioni-----------------------------------------------
-
-/// 2) in posizione POS inverte M geni 
-rowvec Inversion(int pos, int m,rowvec Gen){
-   if(pos==0)       pos = 1;   
-   if(pos>(Ncities-1))       pos = Pbc(pos);   
-   if(m > Ncities-1)       m = 2;  
-
-   int block[m];
-
-   // metto da parte il blocco da swappare
-   for(int j = 0; j < m; j++)      block[j] = Gen[Pbc(pos+j)];
-
-   // riempio al contrario il buco lasciato dal blocco
-   for(int i = 0; i<m; i++)      Gen[Pbc(pos+i)] = block[(m-1)-i];
-	return Gen;
+int randInt(int a, int b){
+   return floor(rnd.Rannyu(a,b));
 }
 
-rowvec shift(rowvec path) {
-
-	int m = floor(rnd.Rannyu(1,Ncities-1));
-	for (int i=1; i<Ncities; i++) {
-		rowvec pathTemp = path;
-		path[i]=pathTemp[Pbc(i-m)];
-	
+void generateMap(){
+	/*
+	// generate random cities in square 1x1:
+	for (int i=0;i<Ncities;i++) {
+		citta(0)=rnd.Rannyu();
+		cicittaty(1)=rnd.Rannyu();
+		cities.col(i)=citta;
 	}
+	*/
+	// generate random cities on circle:
+	double angle;
+	rowvec citta (2);
+	for (int i=0;i<Ncities;i++) {
+		angle=rnd.Rannyu()*6.28;
+		citta(0)=cos(angle);
+		citta(1)=sin(angle);
+		mappa.row(i)=citta;
+	}
+
+	mappa.save("cities0.txt",raw_ascii);
+	
+}
+//-------------------------------------------------------------
+// MUTATIONS: they have to keep the first city in its place
+// and the mutated sequence must still be a path
+
+// swap two cities
+
+rowvec swap(rowvec path) {
+
+	path.swap_cols( randInt(1,Ncities), randInt(1,Ncities) );
 	return path;
+	
 }
 
+// taglia una sottosequenza 
+// in corrispondenza di un certo locus
+// e la incolla altrove
 
-/// 3) a partire da una posizione POS, sposta M geni adiacenti in avanti di N posizioni, 
-///    (eccetto il primo gene e col vincolo m < Ncities-1)
-rowvec Shift(int pos, int m, int n,rowvec Gen){
-   if(pos==0)
-      pos = 1;
-   if(pos>(Ncities-1))   pos = Pbc(pos); 
-   if(m >= Ncities-1)  m = 1;
-   int block[m];
-   // metto da parte il blocco da shiftare
-   for(int j = 0; j < m; j++)  block[j] = Gen[Pbc(pos+j)];
-   // shifto n volte i geni complementari per riempire il buco...
-   for(int i = 0; i<n; i++)  Gen[Pbc(pos+i)] = Gen[Pbc(pos+m+i)];
-   // ... e rimetto il blocco
-   for(int i = 0; i<m; i++) Gen[Pbc(pos+n+i)] = block[i];
-   return Gen;
-}
+rowvec trasponi_sottosequenza(rowvec cammino) {
 
-
-/// 4) shifta tutto di "shift" posizioni
-rowvec Shift2(int shift,rowvec Gen){
+   int locus= randInt(1,Ncities-1);
+   int lunghezza= randInt(1,Ncities-locus-1);
+   int destinazione= randInt(1,Ncities-lunghezza-1);
+   rowvec sottosequenza = 
+   	cammino.subvec(locus, locus + lunghezza - 1);
+   cammino.shed_cols(locus, locus + lunghezza - 1);
+   cammino.insert_cols(destinazione, sottosequenza);
+   return cammino;
    
-   int block[Ncities];
+}
 
-   // metto da parte il blocco da shiftare
-   for(int j = 1; j < Ncities; j++)      block[j-1] = Gen[j];
+rowvec scambia_sottosequenze(rowvec cammino) {
 
-   // sovrascrivo il blocco shiftato
-   for(int i = 1; i < Ncities; i++)    Gen[Pbc(i+shift)] = block[i-1];
-   return Gen;
+    int locus1 = randInt(1,Ncities-1);
+    int lunghezza = randInt(1, (Ncities - locus1)/2);
+    int locus2 = randInt(locus1+lunghezza,Ncities-lunghezza-1);
+    rowvec sottosequenza1 = cammino.subvec(locus1, locus1 + lunghezza - 1);
+    rowvec sottosequenza2 = cammino.subvec(locus2, locus2 + lunghezza - 1);
+    cammino.subvec(locus1, locus1 + lunghezza - 1) = sottosequenza2;
+    cammino.subvec(locus2, locus2 + lunghezza - 1) = sottosequenza1;
+    return cammino;
+    
+}
+
+rowvec inverti_sottosequenza(rowvec cammino) {
+
+    int inizio= randInt(1,Ncities-1);
+    int fine = randInt(inizio+1,Ncities);
+    rowvec sottosequenza = cammino.subvec(inizio, fine - 1);
+    reverse(sottosequenza.begin(), sottosequenza.end());
+    cammino.subvec(inizio, fine - 1) = sottosequenza;
+    return cammino;
+    
 }
 
 
-/// 5) scambia M geni in posizione POS1 con altrettanti in POS2
-rowvec MPermut(int pos1, int pos2, int m,rowvec Gen){
-   if(pos1==0)      pos1 = 1;
-   if(pos2==0)  pos2 = 1;
-   if(pos1>(Ncities-1))  pos1 = Pbc(pos1);
-   if(pos2>(Ncities-1)) pos2 = Pbc(pos2);
-   if(m > Ncities/2)   m = 1;
-   if(m > abs(pos2-pos1))  m = abs(pos1-pos2);
-   if(pos1>pos2){
-      int appo = pos2;
-      pos2 = pos1;
-      pos1 = appo;
-   }
+mat riproduci(rowvec camminoPadre, rowvec camminoMadre) {
 
-   int block[m];
+    int position = randInt(1, Ncities - 1);
 
-   // metto da parte il blocco da swappare
-   for(int j = 0; j < m; j++)   block[j] = Gen[Pbc(pos1+j)];
+    // Create a map to store the indices of numbers in camminoPadre
+    unordered_map<double, int> indiciPadre;
+    for (int i = 0; i < Ncities; ++i) indiciPadre[camminoPadre(i)] = i;
 
-   // riempio il buco lasciato dal blocco...
-   for(int i = 0; i<m; i++)  Gen[Pbc(pos1+i)] = Gen[Pbc(pos2+i)];
-   
-   // ... e rimetto il blocco in pos2
-   for(int i = 0; i<m; i++)   Gen[Pbc(pos2+i)] = block[i];
-   return Gen;
+    // Rearrange the second part of camminoMadre according to the order in camminoPadre
+    for (int i = position; i < Ncities; ++i) {
+        auto it = indiciPadre.find(camminoMadre(i));
+        if (it != indiciPadre.end()) {
+            int index = it->second;
+            if (index != i) {
+                // Swap numbers
+                double temp = camminoMadre(i);
+                camminoMadre(i) = camminoMadre(index);
+                camminoMadre(index) = temp;
+            }
+        }
+    }
+
+    // Rearrange the second part of camminoPadre according to the order in camminoMadre
+    unordered_map<double, int> indiciMadre;
+    indiciMadre.clear();
+    for (int i = 0; i < Ncities; ++i) indiciMadre[camminoMadre(i)] = i;
+
+    for (int i = position; i < Ncities; ++i) {
+        auto it = indiciMadre.find(camminoPadre(i));
+        if (it != indiciMadre.end()) {
+            int index = it->second;
+            if (index != i) {
+                // Swap numbers
+                double temp = camminoPadre(i);
+                camminoPadre(i) = camminoPadre(index);
+                camminoPadre(index) = temp;
+            }
+        }
+    }
+    return join_rows(camminoPadre, camminoMadre);
 }
-
-
-/*
-/// 6) fa il crossover di len geni a partire dalla posizione pos, con un cromosoma parent2
-void Crossover(int pos, int len, Chromosome parent2){
-
-   if(pos==0) pos = 1;
-
-   int block[len];
-   // 1. cut their paths at the same position:
-   //    metto da parte i blocchi da swappare
-   //    (conservando la prima parte)
-   for(int j = 0; j < len; j++) block[j] = Gen[Pbc(pos+j)];
-
-   // 2. complete the paths with the missing cities adding them in the **order** 
-   //    in which they appear in the consort (vale anche se sono separati!):
-   int count1 = 0;
-   
-   for(int j = 1; j < Ncities; j++)
-   
-      // ciclo sui geni nei blocchi 
-      for(int i = 0; i < len; i++)
-         // quando trovo nell'altro genitore il gene presente
-         // nel blocco, lo salvo nel buco scavato all'inizio
-         if(parent2.Gen[Pbc(j)] == block[i] ){
-            Gen[Pbc(pos+count1)] = parent2.Gen[Pbc(j)];
-            count1++;
-         }
-      
-}
-*/

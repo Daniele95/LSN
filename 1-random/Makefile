@@ -1,11 +1,11 @@
 CC = g++
 CFLAGS = -Wall -O3 --std=c++11
 
-main.exe : main.o random.o
-	$(CC) random.o main.o -o main.exe
-main.o : main.cpp
-	$(CC) -c main.cpp -o main.o $(CFLAGS)
-random.o : ../random/random.cpp ../random/random.h
-	$(CC) -c ../random/random.cpp -o random.o $(CFLAGS)
+main.exe : ex1.o random.o
+	$(CC) random.o ex1.o -o ex1.exe
+main.o : ex1.cpp
+	$(CC) -c ex1.cpp -o ex1.o $(CFLAGS)
+random.o : ../genRandom/random.cpp ../genRandom/random.h
+	$(CC) -c ../genRandom/random.cpp -o random.o $(CFLAGS)
 clean :
-	rm *.o main.exe
+	rm *.o ../genRandom/ex1.exe seed.out

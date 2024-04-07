@@ -1,4 +1,4 @@
-CC = g++
+CC = mpic++
 CFLAGS = -Wall -O3 --std=c++11
 
 main.exe : main.o random.o

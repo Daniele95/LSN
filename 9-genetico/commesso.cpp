@@ -5,6 +5,7 @@
 #include "commesso.h"
 #include <armadillo>
 #include <unordered_map>
+#include "mpi.h"
 
 using namespace arma;
 using namespace std;
@@ -51,6 +52,7 @@ mat mappaOrdinata;
 
 // METODO DI EVOLUZIONE
 
+mat evolvi(mat, int);
 void risolviCommessoViaggiatore(); 
 
 //MUTAZIONI
@@ -73,28 +75,34 @@ void generaMappaCerchio();
 void generaMappaQuadrato();
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
    int seed=23;
    cout << "seme: "<<endl;
-   cin >> seed;
-
-   rnd.SetSeed();
-   rnd.SetPrimesCouple(seed);
    	
-   
-   cin>> avversitaAmbientale; //esponente per la selezione 
+   /*
+   cin>> avversitaAmbientale; 
    cin>> pScambio;
    cin>> pTrasponi;
    cin>> pScambiaSequenze;
-   cin>> pInverti;
-	
-   cin>> pRiproduzione;
-   
+   cin>> pInverti;	
+   cin>> pRiproduzione;   
    cin>> popolazione;
    cin>> Ncities;
    cin>> generazioni;
+   cin >> seed;*/
+   rnd.SetSeed();
+   rnd.SetPrimesCouple(seed);
 
+   //INIZIO PARALLELIZZAZIONE
+   int size, rank;
+   MPI_Init(&argc,&argv);
+   MPI_Comm_size(MPI_COMM_WORLD, &size);//ottengo num tot di processi
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);//ogni processo ottiene il proprio rank
+   MPI_Status stat1, stat2;
+   cout <<" thread " << rank << " Nthreads: " << size<<endl;
+   
+   
 
    generazione=mat(popolazione, Ncities);
    lunghezze=colvec(popolazione);
@@ -104,24 +112,36 @@ int main() {
    migliori=colvec(generazioni);
    migliori_semimedia=colvec(generazioni);
 
-   generaMappaCerchio();
+   mappa.load("risultati/cerchio0.txt", raw_ascii);
    risolviCommessoViaggiatore();
    mappaOrdinata.save("risultati/cerchio1.txt",raw_ascii);
    migliori.save("risultati/miglioriCerchio.txt",raw_ascii);   
    migliori_semimedia.save("risultati/migliori_semimediaCerchio.txt",raw_ascii);
    
-   generaMappaQuadrato();
+   mappa.load("risultati/quadrato0.txt", raw_ascii);
    risolviCommessoViaggiatore();
    mappaOrdinata.save("risultati/quadrato1.txt",raw_ascii);
    migliori.save("risultati/miglioriQuadrato.txt",raw_ascii);   
    migliori_semimedia.save("risultati/migliori_semimediaQuadrato.txt",raw_ascii);
    
+   
+   
+   
+   MPI_Finalize(); //FINE PARALLELIZZAZIONE
    cout <<"successo"<<endl;
    
    return 0;
 }
 
 void risolviCommessoViaggiatore(){
+	
+   // GESTIONE THREAD
+   int Nmigr = 5; //definisce ogni quanto bisogna scambiare cromosomi tra popolazioni parallele
+   vector<int>imesg (Ncities);
+   vector<int>imesg2 (Ncities);
+   int itag=1; int itag2=2;
+   vector <int> which_swap = {0, 1, 2, 3};
+	
 	
    cout << "evolvo " << popolazione << " cammini "
 	     << " di lunghezza " << Ncities << endl;
@@ -140,8 +160,54 @@ void risolviCommessoViaggiatore(){
    
    // evolvo il sistema
    for (int k = 0; k<generazioni; k++)  {
+      generazione= evolvi(generazione,k);
+   /*
+         random_shuffle(which_swap.begin(), which_swap.end()); 
+
+	 //scambio i migliori delle prime due popolazioni: invece che fare due scambi non si può fare Comm_split?
+	 for(int j=0; j<dim; j++){	
+	    imesg[j] = Pop.Get_i_Chrom(0).Get_i_gen(j);
+	    imesg2[j] = Pop.Get_i_Chrom(0).Get_i_gen(j);
+	 }
+		
+         if(rank==which_swap[1]){
+	    MPI_Send(&imesg[0],dim,MPI_INTEGER,which_swap[0],itag,MPI_COMM_WORLD);
+            MPI_Recv(&imesg2[0],dim,MPI_INTEGER,which_swap[0],itag2, MPI_COMM_WORLD,&stat2);
+				//cout<<"messaggio1 = "<<imesg2[0]<<endl;
+	 }
+	 else if(rank==which_swap[0]){
+	    MPI_Send(&imesg2[0],dim,MPI_INTEGER,which_swap[1],itag2, MPI_COMM_WORLD);
+	    MPI_Recv(&imesg[0],dim,MPI_INTEGER,which_swap[1],itag, MPI_COMM_WORLD,&stat1);
+				//cout<<"messaggio = "<<imesg[0]<<endl;
+	 }
+	
+	 if(rank==which_swap[1]){ 
+            Chromosome Chrom_back(dim);
+            Chrom_back.SetGenes(imesg2);
+            Pop.Set_i_Chrom(Chrom_back, 0); 
+         }
+	 else if(rank==which_swap[0]){ 
+            Chromosome Chrom_back(dim);
+            Chrom_back.SetGenes(imesg);
+            Pop.Set_i_Chrom(Chrom_back, 0); 
+         }
    
-      // riempio la nuova generazione con i cammini
+    */
+         
+   }
+
+   // ordino le città in base al cammino minimo 
+   // ottenuto come individuo più fit della generazione più evoluta
+ 
+   // mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
+   mappaOrdinata=mappa;
+   for (int i = 1; i<Ncities; i++)
+      mappaOrdinata.row(i)= mappa.row(generazione.row(0)(i)) ;
+      
+}
+mat evolvi(mat generazione,int k)
+{
+  // riempio la nuova generazione con i cammini
       // più brevi della vecchia, fatti riprodurre e mutati
       mat nuovaGenerazione = generazione;      
       int i=0;
@@ -173,18 +239,9 @@ void risolviCommessoViaggiatore(){
       migliori(k) = int(lunghezze(0));
        migliori_semimedia(k) = int(mean(
          lunghezze.subvec(0, popolazione / 2 - 1)));
-         
-   }
-
-   // ordino le città in base al cammino minimo 
-   // ottenuto come individuo più fit della generazione più evoluta
- 
-   // mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
-   mappaOrdinata=mappa;
-   for (int i = 1; i<Ncities; i++)
-      mappaOrdinata.row(i)= mappa.row(generazione.row(0)(i)) ;
-      
+    return generazione;
 }
+
 
 //-------------------------------------------------------------
 bool check(mat generazione) {

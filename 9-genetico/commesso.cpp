@@ -36,7 +36,6 @@ double dist(colvec,colvec);
 int Pbc(int j);
 void generaMappaCerchio();
 void generaMappaQuadrato();
-mat mappaOrdinata;
 
 rowvec muta(rowvec);
 rowvec swap(rowvec);
@@ -46,10 +45,12 @@ rowvec inverti_sottosequenza(rowvec);
 mat riproduci(rowvec, rowvec);
 
 int popolazione = 300;
+int Ncities_max=100;
 int Ncities = 34;
 int generazioni = 1000;
-colvec migliori(generazioni);
-colvec migliori_semimedia(generazioni);
+int generazioni_max = 2000;
+colvec migliori(generazioni_max);
+colvec migliori_semimedia(generazioni_max);
 void risolviCommessoViaggiatore();
 
 // una generazione è la popolazione di cammini a un certo tempo,
@@ -57,20 +58,39 @@ void risolviCommessoViaggiatore();
 // un cammino è un vettore riga. 
 // per fare un array di cammini, li incolonno
 
-mat generazione(popolazione, Ncities);
+mat generazione(popolazione, Ncities_max);
 colvec lunghezze(popolazione);
 
 // random cities positions
-mat mappa(Ncities,2); // N righe,2 colonne, 
+mat mappa(Ncities_max,2); // N righe,2 colonne, 
+mat mappaOrdinata;
 
 int main() {
 
    int seed;
+   cout << "seme: "<<endl;
    cin >> seed;
-   cout << "seme: "<<seed<<endl;
 
    rnd.SetSeed();
    rnd.SetPrimesCouple(seed);
+   	
+   
+   cin>> avversitaAmbientale; //esponente per la selezione 
+   cin>> pScambio;
+   cin>> pTrasponi;
+   cin>> pScambiaSequenze;
+   cin>> pInverti;
+   cin>> pRiproduzione;
+	
+   cin>> popolazione;
+   cin>> Ncities;
+   cin>> generazioni;
+
+   // taglio le matrici al valore letto per Ncities e generazioni
+   mappa=mappa.rows(0,Ncities); // N righe,2 colonne, 
+   generazione=generazione.cols(0,Ncities-1);	
+   migliori=migliori.rows(0,generazioni-1);
+   migliori_semimedia=migliori_semimedia.rows(0,generazioni-1);
    	
    generaMappaCerchio();
    risolviCommessoViaggiatore();

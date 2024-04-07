@@ -20,6 +20,11 @@ class popolazione {
     }
 };
 
+// PARAMETRI
+
+int popolazione = 300;
+int Ncities = 34;
+int generazioni = 300;
 
 float avversitaAmbientale =3; //esponente per la selezione 
 float pMutazione=1.;
@@ -29,13 +34,26 @@ float pScambiaSequenze=0.1*pMutazione;
 float pInverti=0.1*pMutazione;
 float pRiproduzione=0.5;
 
-bool check(mat);
-void ordinaCammini();
-double lunghezzaCammino(rowvec cammino,mat mappa);
-double dist(colvec,colvec);
-int Pbc(int j);
-void generaMappaCerchio();
-void generaMappaQuadrato();
+// VARIABILI
+
+// una generazione è la popolazione di cammini a un certo tempo,
+// quindi una lista di cammini.
+// un cammino è un vettore riga. 
+// per fare una lista di cammini, li incolonno
+
+mat generazione;
+colvec lunghezze;
+colvec migliori;
+colvec migliori_semimedia;
+
+mat mappa;// N righe,2 colonne,
+mat mappaOrdinata;
+
+// METODO DI EVOLUZIONE
+
+void risolviCommessoViaggiatore(); 
+
+//MUTAZIONI
 
 rowvec muta(rowvec);
 rowvec swap(rowvec);
@@ -44,28 +62,16 @@ rowvec scambia_sottosequenze(rowvec);
 rowvec inverti_sottosequenza(rowvec);
 mat riproduci(rowvec, rowvec);
 
-int Ncities_max=100;
-int generazioni_max = 2000;
-int popolazione_max=1000;
+// STRUMENTI
 
-int popolazione = 300;
-int Ncities = 34;
-int generazioni = 300;
-colvec migliori(generazioni_max);
-colvec migliori_semimedia(generazioni_max);
-void risolviCommessoViaggiatore();
+bool check(mat);
+void ordinaCammini();
+double lunghezzaCammino(rowvec cammino,mat mappa);
+double dist(colvec,colvec);
+int Pbc(int j);
+void generaMappaCerchio();
+void generaMappaQuadrato();
 
-// una generazione è la popolazione di cammini a un certo tempo,
-// quindi una lista di cammini.
-// un cammino è un vettore riga. 
-// per fare un array di cammini, li incolonno
-
-mat generazione(popolazione_max, Ncities_max);
-colvec lunghezze(popolazione_max);
-
-// random cities positions
-mat mappa(Ncities_max,2); // N righe,2 colonne, 
-mat mappaOrdinata;
 
 int main() {
 
@@ -89,14 +95,15 @@ int main() {
    cin>> Ncities;
    cin>> generazioni;
 
-   // taglio le matrici al valore letto per Ncities e generazioni
-   mappa=mappa.rows(0,Ncities); // N righe,2 colonne, 
-   generazione=generazione.cols(0,Ncities-1);	
-   generazione=generazione.rows(0,popolazione-1);
-   lunghezze=lunghezze.rows(0,popolazione-1);
-   migliori=migliori.rows(0,generazioni-1);
-   migliori_semimedia=migliori_semimedia.rows(0,generazioni-1);
-   	
+
+   generazione=mat(popolazione, Ncities);
+   lunghezze=colvec(popolazione);
+
+   mappa=mat(Ncities,2); // N righe,2 colonne, 
+   mappaOrdinata=mappa;
+   migliori=colvec(generazioni);
+   migliori_semimedia=colvec(generazioni);
+
    generaMappaCerchio();
    risolviCommessoViaggiatore();
    mappaOrdinata.save("risultati/cerchio1.txt",raw_ascii);
@@ -108,6 +115,8 @@ int main() {
    mappaOrdinata.save("risultati/quadrato1.txt",raw_ascii);
    migliori.save("risultati/miglioriQuadrato.txt",raw_ascii);   
    migliori_semimedia.save("risultati/migliori_semimediaQuadrato.txt",raw_ascii);
+   
+   cout <<"successo"<<endl;
    
    return 0;
 }
@@ -128,7 +137,8 @@ void risolviCommessoViaggiatore(){
    }
    
    generazione = generazione.rows(sort_index(lunghezze));
-	
+   
+   // evolvo il sistema
    for (int k = 0; k<generazioni; k++)  {
    
       // riempio la nuova generazione con i cammini

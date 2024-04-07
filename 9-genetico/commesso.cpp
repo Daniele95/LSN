@@ -61,7 +61,7 @@ void risolviCommessoViaggiatore();
 // per fare un array di cammini, li incolonno
 
 mat generazione(popolazione_max, Ncities_max);
-colvec lunghezze(popolazione);
+colvec lunghezze(popolazione_max);
 
 // random cities positions
 mat mappa(Ncities_max,2); // N righe,2 colonne, 
@@ -93,6 +93,7 @@ int main() {
    mappa=mappa.rows(0,Ncities); // N righe,2 colonne, 
    generazione=generazione.cols(0,Ncities-1);	
    generazione=generazione.rows(0,popolazione-1);
+   lunghezze=lunghezze.rows(0,popolazione-1);
    migliori=migliori.rows(0,generazioni-1);
    migliori_semimedia=migliori_semimedia.rows(0,generazioni-1);
    	

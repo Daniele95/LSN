@@ -27,14 +27,16 @@ float pScambio=0.1*pMutazione;
 float pTrasponi=0.1*pMutazione;
 float pScambiaSequenze=0.1*pMutazione;
 float pInverti=0.1*pMutazione;
-//float pRiproduzione=0.7;
+float pRiproduzione=0.5;
 
 bool check(mat);
 void ordinaCammini();
 double lunghezzaCammino(rowvec cammino,mat mappa);
 double dist(colvec,colvec);
 int Pbc(int j);
-void generateMap();
+void generaMappaCerchio();
+void generaMappaQuadrato();
+mat mappaOrdinata;
 
 rowvec muta(rowvec);
 rowvec swap(rowvec);
@@ -46,10 +48,12 @@ mat riproduci(rowvec, rowvec);
 int popolazione = 300;
 int Ncities = 34;
 int generazioni = 1000;
-rowvec fittests(generazioni);
+colvec migliori(generazioni);
+colvec migliori_semimedia(generazioni);
+void risolviCommessoViaggiatore();
 
 // una generazione è la popolazione di cammini a un certo tempo,
-// quindi una lista di cammini
+// quindi una lista di cammini.
 // un cammino è un vettore riga. 
 // per fare un array di cammini, li incolonno
 
@@ -61,10 +65,29 @@ mat mappa(Ncities,2); // N righe,2 colonne,
 
 int main() {
 
+   int seed;
+   cin >> seed;
+   cout << "seme: "<<seed<<endl;
+
    rnd.SetSeed();
-   rnd.SetPrimesCouple(23);
+   rnd.SetPrimesCouple(seed);
    	
-   generateMap();
+   generaMappaCerchio();
+   risolviCommessoViaggiatore();
+   mappaOrdinata.save("risultati/cerchio1.txt",raw_ascii);
+   migliori.save("risultati/miglioriCerchio.txt",raw_ascii);   
+   migliori_semimedia.save("risultati/migliori_semimediaCerchio.txt",raw_ascii);
+   
+   generaMappaQuadrato();
+   risolviCommessoViaggiatore();
+   mappaOrdinata.save("risultati/quadrato1.txt",raw_ascii);
+   migliori.save("risultati/miglioriQuadrato.txt",raw_ascii);   
+   migliori_semimedia.save("risultati/migliori_semimediaQuadrato.txt",raw_ascii);
+   
+   return 0;
+}
+
+void risolviCommessoViaggiatore(){
 	
    cout << "evolvo " << popolazione << " cammini "
 	     << " di lunghezza " << Ncities << endl;
@@ -78,25 +101,16 @@ int main() {
       generazione.row(i) = nuovoCammino;
       lunghezze(i) = lunghezzaCammino(nuovoCammino,mappa);
    }
-	
+   
    generazione = generazione.rows(sort_index(lunghezze));
 	
-   cout << "cammino più economico" << endl
-      << generazione.row(0) << endl;
-
-   cout << "evoluzione per " << generazioni
-      << " generazioni" << endl;
-
-   // ciclo sulle generazioni
-   for (int k = 0; k<generazioni; k++) {
-
-      // creo la generazione successiva
-      mat nuovaGenerazione = generazione;
-      
+   for (int k = 0; k<generazioni; k++)  {
+   
       // riempio la nuova generazione con i cammini
-      // più brevi della vecchia, fatti riprodurre
-      // e mutati
-      for (int i=0; i<popolazione/2;i++){
+      // più brevi della vecchia, fatti riprodurre e mutati
+      mat nuovaGenerazione = generazione;      
+      for (int i=0; i<popolazione/2;i++) if (rnd.Rannyu()<pRiproduzione)
+      {
       
          rowvec padre = generazione.row(int(popolazione*
                pow(rnd.Rannyu(),avversitaAmbientale)));
@@ -105,43 +119,35 @@ int main() {
          mat prole = riproduci( padre, madre );
          nuovaGenerazione.row(i)=muta(prole.row(0));
          nuovaGenerazione.row(i+1)=muta(prole.row(1));
-    
+      
       }
       generazione = nuovaGenerazione;
-		
+      if( !check(generazione) ) cout <<
+         "qualche cammino non soddisfa"<<
+         "le condizioni al contorno" << endl;
+      
       // ordino la generazione in base alla lunghezza
       for (int i=0; i<popolazione;i++) 
          lunghezze(i) = lunghezzaCammino(generazione.row(i),mappa);
       generazione = generazione.rows(sort_index(lunghezze));
-      lunghezze=sort(lunghezze);
-		
-      if( !check(generazione) ) cout <<
-      "qualche cammino non soddisfa"<<
-      "le condizioni al contorno" << endl;
-
-      fittests(k) = int(lunghezze(0));
+      lunghezze=sort(lunghezze);		
+      migliori(k) = int(lunghezze(0));
+       migliori_semimedia(k) = int(mean(
+         lunghezze.subvec(0, popolazione / 2 - 1)));
+         
    }
-   colvec fitteststr=fittests.t();
-   fitteststr.save("fittests.txt",raw_ascii);
-	
-   imat ipaths = conv_to<imat>::from(generazione);
-   ipaths.save("paths.txt",raw_ascii);
-	
-   ivec ilengths = conv_to<ivec>::from(lunghezze);
-   ilengths.save("lengths.txt",raw_ascii);
-	
-   cout << "cammino più economico" << endl
-      << generazione.row(0)<< endl;
-   ivec iPath = conv_to<ivec>::from(generazione.row(0));
-   iPath.save("Path.txt",raw_ascii);
-	
-   mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
-   mappaOrdinata.save("cities1.txt",raw_ascii);
-	
-   return 0;
 
+   // ordino le città in base al cammino minimo 
+   // ottenuto come individuo più fit della generazione più evoluta
+ 
+   // mat mappaOrdinata=mappa.rows(sort_index(generazione.row(0)));
+   mappaOrdinata=mappa;
+   for (int i = 1; i<Ncities; i++)
+      mappaOrdinata.row(i)= mappa.row(generazione.row(0)(i)) ;
+      
 }
 
+//-------------------------------------------------------------
 bool check(mat generazione) {
 
 	bool result = true;
@@ -159,8 +165,8 @@ double lunghezzaCammino(rowvec cammino, mat mappa) {
    double lunghezza = 0.;
    for (int i = 1; i<Ncities; i++) // mappa.row(cammino[i]) è
    	// l'i-esima città visitata dal cammino
-      lunghezza += norm(mappa.row(cammino[i])-mappa.row(cammino[i-1]));
-   lunghezza += norm(mappa.row(cammino[0])-mappa.row(cammino[Ncities-1]));
+      lunghezza += norm(mappa.row(cammino(i))-mappa.row(cammino(i-1)));
+   lunghezza += norm(mappa.row(cammino(0))-mappa.row(cammino(Ncities-1)));
    return lunghezza;
    
 }
@@ -174,16 +180,8 @@ int randInt(int a, int b){
    return floor(rnd.Rannyu(a,b));
 }
 
-void generateMap(){
-	/*
-	// generate random cities in square 1x1:
-	for (int i=0;i<Ncities;i++) {
-		citta(0)=rnd.Rannyu();
-		cicittaty(1)=rnd.Rannyu();
-		cities.col(i)=citta;
-	}
-	*/
-	// generate random cities on circle:
+void generaMappaCerchio(){
+	
 	double angle;
 	rowvec citta (2);
 	for (int i=0;i<Ncities;i++) {
@@ -193,7 +191,19 @@ void generateMap(){
 		mappa.row(i)=citta;
 	}
 
-	mappa.save("cities0.txt",raw_ascii);
+	mappa.save("risultati/cerchio0.txt",raw_ascii);
+	
+}
+void generaMappaQuadrato(){
+
+	rowvec citta (2);
+	// generate random cities in square 1x1:
+	for (int i=0;i<Ncities;i++) {
+		citta(0)=rnd.Rannyu();
+		citta(1)=rnd.Rannyu();
+		mappa.row(i)=citta;
+	}
+	mappa.save("risultati/quadrato0.txt",raw_ascii);
 	
 }
 //-------------------------------------------------------------

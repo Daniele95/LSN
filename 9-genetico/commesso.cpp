@@ -44,11 +44,13 @@ rowvec scambia_sottosequenze(rowvec);
 rowvec inverti_sottosequenza(rowvec);
 mat riproduci(rowvec, rowvec);
 
-int popolazione = 300;
 int Ncities_max=100;
-int Ncities = 34;
-int generazioni = 1000;
 int generazioni_max = 2000;
+int popolazione_max=1000;
+
+int popolazione = 300;
+int Ncities = 34;
+int generazioni = 300;
 colvec migliori(generazioni_max);
 colvec migliori_semimedia(generazioni_max);
 void risolviCommessoViaggiatore();
@@ -58,7 +60,7 @@ void risolviCommessoViaggiatore();
 // un cammino è un vettore riga. 
 // per fare un array di cammini, li incolonno
 
-mat generazione(popolazione, Ncities_max);
+mat generazione(popolazione_max, Ncities_max);
 colvec lunghezze(popolazione);
 
 // random cities positions
@@ -67,7 +69,7 @@ mat mappaOrdinata;
 
 int main() {
 
-   int seed;
+   int seed=23;
    cout << "seme: "<<endl;
    cin >> seed;
 
@@ -80,8 +82,9 @@ int main() {
    cin>> pTrasponi;
    cin>> pScambiaSequenze;
    cin>> pInverti;
-   cin>> pRiproduzione;
 	
+   cin>> pRiproduzione;
+   
    cin>> popolazione;
    cin>> Ncities;
    cin>> generazioni;
@@ -89,6 +92,7 @@ int main() {
    // taglio le matrici al valore letto per Ncities e generazioni
    mappa=mappa.rows(0,Ncities); // N righe,2 colonne, 
    generazione=generazione.cols(0,Ncities-1);	
+   generazione=generazione.rows(0,popolazione-1);
    migliori=migliori.rows(0,generazioni-1);
    migliori_semimedia=migliori_semimedia.rows(0,generazioni-1);
    	
@@ -129,16 +133,20 @@ void risolviCommessoViaggiatore(){
       // riempio la nuova generazione con i cammini
       // più brevi della vecchia, fatti riprodurre e mutati
       mat nuovaGenerazione = generazione;      
-      for (int i=0; i<popolazione/2;i++) if (rnd.Rannyu()<pRiproduzione)
+      int i=0;
+      while (i<popolazione-2) 
       {
-      
          rowvec padre = generazione.row(int(popolazione*
-               pow(rnd.Rannyu(),avversitaAmbientale)));
+            pow(rnd.Rannyu(),avversitaAmbientale)));
          rowvec madre = generazione.row(int(popolazione*
-               pow(rnd.Rannyu(),avversitaAmbientale)));
-         mat prole = riproduci( padre, madre );
-         nuovaGenerazione.row(i)=muta(prole.row(0));
-         nuovaGenerazione.row(i+1)=muta(prole.row(1));
+            pow(rnd.Rannyu(),avversitaAmbientale)));
+               
+         mat prole=riproduci( padre, madre );  //join_vert(padre,madre);    
+         if (rnd.Rannyu()<pRiproduzione) 
+            prole = riproduci( padre, madre );  
+         
+         nuovaGenerazione.row(i)=muta(prole.row(0)); i++; 
+         nuovaGenerazione.row(i+1)=muta(prole.row(1)); i++; 
       
       }
       generazione = nuovaGenerazione;

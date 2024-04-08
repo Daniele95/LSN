@@ -167,15 +167,16 @@ void risolviCommessoViaggiatore(bool migrazioni){
          migrante =generazione.row(0);
          migrante2 =generazione.row(0);
          
+         
          if(indice_thread==which_swap[1])
          {        
-            MPI_Send(migrante.memptr(), Ncities, MPI_INTEGER, which_swap[0], itag, MPI_COMM_WORLD);
-            MPI_Recv(migrante2.memptr(), Ncities, MPI_INTEGER, which_swap[0], itag2, MPI_COMM_WORLD, &stat2);
+            MPI_Send(migrante.memptr(), Ncities, MPI_DOUBLE, which_swap[0], itag, MPI_COMM_WORLD);
+            MPI_Recv(migrante2.memptr(), Ncities, MPI_DOUBLE, which_swap[0], itag2, MPI_COMM_WORLD, &stat2);
          }
          else if(indice_thread==which_swap[0])
          {
-            MPI_Send(migrante2.memptr(), Ncities, MPI_INTEGER, which_swap[1], itag2, MPI_COMM_WORLD);
-            MPI_Recv(migrante.memptr(), Ncities, MPI_INTEGER, which_swap[1], itag, MPI_COMM_WORLD, &stat1);
+            MPI_Send(migrante2.memptr(), Ncities, MPI_DOUBLE, which_swap[1], itag2, MPI_COMM_WORLD);
+            MPI_Recv(migrante.memptr(), Ncities, MPI_DOUBLE, which_swap[1], itag, MPI_COMM_WORLD, &stat1);
          }
       
          if(indice_thread==which_swap[1]) generazione.row(0)=migrante2;            

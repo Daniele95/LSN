@@ -43,7 +43,7 @@ mat mappaOrdinata;
 // METODO DI EVOLUZIONE
 
 mat evolvi(mat, int);
-void risolviCommessoViaggiatore(); 
+void risolviCommessoViaggiatore(bool); 
 
 //MUTAZIONI
 
@@ -93,12 +93,13 @@ int main(int argc, char *argv[]) {
    cin >> seed;
    */
    rnd.SetSeed();
-   rnd.SetPrimesCouple(seed);
    
    //INIZIO PARALLELIZZAZIONE
    MPI_Init(&argc,&argv);
    MPI_Comm_size(MPI_COMM_WORLD, &Nthreads);//ottengo num tot di processi
    MPI_Comm_rank(MPI_COMM_WORLD, &indice_thread);//ogni processo ottiene il proprio rank
+  
+   rnd.SetPrimesCouple(seed+indice_thread);
    
    migrante=rowvec(Ncities);
    migrante2=rowvec(Ncities);
@@ -111,16 +112,23 @@ int main(int argc, char *argv[]) {
    migliori_semimedia=colvec(generazioni);
 
    mappa.load("risultati/cerchio0.txt", raw_ascii);
-   risolviCommessoViaggiatore();
+   risolviCommessoViaggiatore(false);
    mappaOrdinata.save("risultati/cerchio1.txt",raw_ascii);
    migliori.save("risultati/miglioriCerchio.txt",raw_ascii);   
-   migliori_semimedia.save("risultati/migliori_semimediaCerchio.txt",raw_ascii);
+   migliori_semimedia.save("risultati/migliori_semimediaCerchio.txt",raw_ascii);   
    
    mappa.load("risultati/quadrato0.txt", raw_ascii);
-   risolviCommessoViaggiatore();
+   risolviCommessoViaggiatore(false);
    mappaOrdinata.save("risultati/quadrato"+to_string(indice_thread+1)+".txt",raw_ascii);
    migliori.save("risultati/miglioriQuadrato"+to_string(indice_thread+1)+".txt",raw_ascii);   
    migliori_semimedia.save("risultati/migliori_semimediaQuadrato"+to_string(indice_thread+1)+".txt",raw_ascii);
+   
+   mappa.load("risultati/quadrato0.txt", raw_ascii);
+   risolviCommessoViaggiatore(true);
+   mappaOrdinata.save("risultati/migrazioniquadrato"+to_string(indice_thread+1)+".txt",raw_ascii);
+   migliori.save("risultati/migrazionimiglioriQuadrato"+to_string(indice_thread+1)+".txt",raw_ascii);   
+   migliori_semimedia.save("risultati/migrazionimigliori_semimediaQuadrato"+to_string(indice_thread+1)+".txt",raw_ascii);
+   
    
    MPI_Finalize(); //FINE PARALLELIZZAZIONE
    cout <<"successo"<<endl;
@@ -128,7 +136,7 @@ int main(int argc, char *argv[]) {
    return 0;
 }
 
-void risolviCommessoViaggiatore(){
+void risolviCommessoViaggiatore(bool migrazioni){
 
    cout << "evolvo " << popolazione << " cammini "
 	<< " di lunghezza " << Ncities << endl;
@@ -151,25 +159,27 @@ void risolviCommessoViaggiatore(){
    for (int k = 0; k<generazioni; k++)  {
    
       generazione= evolvi(generazione,k);   
-      random_shuffle(which_swap.begin(), which_swap.end()); 
+      
+      if (migrazioni) {
+         random_shuffle(which_swap.begin(), which_swap.end()); 
 
-      //scambio i migliori delle prime due popolazioni: invece che fare due scambi non si può fare Comm_split?
-      for(int j=0; j<Ncities; j++){	
-         migrante[j] =generazione(0,j);
-         migrante2[j] = generazione(0,j);
-      }
-      if(indice_thread==which_swap[1]){
-         MPI_Send(&migrante[0],Ncities,MPI_INTEGER,which_swap[0],itag,MPI_COMM_WORLD);
-         MPI_Recv(&migrante2[0],Ncities,MPI_INTEGER,which_swap[0],itag2, MPI_COMM_WORLD,&stat2);
-      }
-      else if(indice_thread==which_swap[0]){
-         MPI_Send(&migrante2[0],Ncities,MPI_INTEGER,which_swap[1],itag2, MPI_COMM_WORLD);
-         MPI_Recv(&migrante[0],Ncities,MPI_INTEGER,which_swap[1],itag, MPI_COMM_WORLD,&stat1);
-      }
+         //scambio i migliori delle prime due popolazioni: invece che fare due scambi non si può fare Comm_split?
+         for(int j=0; j<Ncities; j++){	
+            migrante[j] =generazione(0,j);
+            migrante2[j] = generazione(0,j);
+         }
+         if(indice_thread==which_swap[1]){
+            MPI_Send(&migrante[0],Ncities,MPI_INTEGER,which_swap[0],itag,MPI_COMM_WORLD);
+            MPI_Recv(&migrante2[0],Ncities,MPI_INTEGER,which_swap[0],itag2, MPI_COMM_WORLD,&stat2);
+         }
+         else if(indice_thread==which_swap[0]){
+            MPI_Send(&migrante2[0],Ncities,MPI_INTEGER,which_swap[1],itag2, MPI_COMM_WORLD);
+            MPI_Recv(&migrante[0],Ncities,MPI_INTEGER,which_swap[1],itag, MPI_COMM_WORLD,&stat1);
+         }
       
-      if(indice_thread==which_swap[1]) generazione.row(0)=migrante2;      
-      
-      else if(indice_thread==which_swap[0]) generazione.row(0)=migrante;
+         if(indice_thread==which_swap[1]) generazione.row(0)=migrante2;            
+         else if(indice_thread==which_swap[0]) generazione.row(0)=migrante;
+      }
          
    }
    // ordino le città in base al cammino minimo 

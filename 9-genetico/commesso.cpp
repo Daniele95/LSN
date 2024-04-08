@@ -159,28 +159,29 @@ void risolviCommessoViaggiatore(bool migrazioni){
    for (int k = 0; k<generazioni; k++)  {
    
       generazione= evolvi(generazione,k);   
-      
       if (migrazioni) {
+       //  if(k==0) cout<<"faccio gli scambi: "<<endl;
          random_shuffle(which_swap.begin(), which_swap.end()); 
 
          //scambio i migliori delle prime due popolazioni: invece che fare due scambi non si può fare Comm_split?
-         for(int j=0; j<Ncities; j++){	
-            migrante[j] =generazione(0,j);
-            migrante2[j] = generazione(0,j);
+         migrante =generazione.row(0);
+         migrante2 =generazione.row(0);
+         
+         if(indice_thread==which_swap[1])
+         {        
+            MPI_Send(migrante.memptr(), Ncities, MPI_INTEGER, which_swap[0], itag, MPI_COMM_WORLD);
+            MPI_Recv(migrante2.memptr(), Ncities, MPI_INTEGER, which_swap[0], itag2, MPI_COMM_WORLD, &stat2);
          }
-         if(indice_thread==which_swap[1]){
-            MPI_Send(&migrante[0],Ncities,MPI_INTEGER,which_swap[0],itag,MPI_COMM_WORLD);
-            MPI_Recv(&migrante2[0],Ncities,MPI_INTEGER,which_swap[0],itag2, MPI_COMM_WORLD,&stat2);
-         }
-         else if(indice_thread==which_swap[0]){
-            MPI_Send(&migrante2[0],Ncities,MPI_INTEGER,which_swap[1],itag2, MPI_COMM_WORLD);
-            MPI_Recv(&migrante[0],Ncities,MPI_INTEGER,which_swap[1],itag, MPI_COMM_WORLD,&stat1);
+         else if(indice_thread==which_swap[0])
+         {
+            MPI_Send(migrante2.memptr(), Ncities, MPI_INTEGER, which_swap[1], itag2, MPI_COMM_WORLD);
+            MPI_Recv(migrante.memptr(), Ncities, MPI_INTEGER, which_swap[1], itag, MPI_COMM_WORLD, &stat1);
          }
       
          if(indice_thread==which_swap[1]) generazione.row(0)=migrante2;            
          else if(indice_thread==which_swap[0]) generazione.row(0)=migrante;
       }
-         
+   
    }
    // ordino le città in base al cammino minimo 
    // ottenuto come individuo più fit della generazione più evoluta: 
@@ -196,22 +197,22 @@ mat evolvi(mat generazione,int k)
 {
       // riempio la nuova generazione con i cammini
       // più brevi della vecchia, fatti riprodurre e mutati
-      mat nuovaGenerazione = generazione;      
+      mat nuovaGenerazione = generazione;
       int i=0;
-      while (i<popolazione-2) 
+      for (i=0;i<popolazione-2;i++) 
       {
          rowvec padre = generazione.row(int(popolazione*
             pow(rnd.Rannyu(),avversitaAmbientale)));
          rowvec madre = generazione.row(int(popolazione*
             pow(rnd.Rannyu(),avversitaAmbientale)));
                
-         mat prole=riproduci( padre, madre );  //join_vert(padre,madre);    
-         if (rnd.Rannyu()<pRiproduzione) 
-            prole = riproduci( padre, madre );  
+         mat prole=riproduci( padre, madre );  //join_vert(padre,madre);
+         if (rnd.Rannyu()<pRiproduzione)
+            prole = riproduci( padre, madre );
          
-         nuovaGenerazione.row(i)=muta(prole.row(0)); i++; 
-         nuovaGenerazione.row(i+1)=muta(prole.row(1)); i++; 
-      
+         nuovaGenerazione.row(i)=muta(prole.row(0));
+         nuovaGenerazione.row(i+1)=muta(prole.row(1));
+         i++;
       }
       generazione = nuovaGenerazione;
       if( !check(generazione) ) cout <<

@@ -20,6 +20,8 @@ double delta = 1.6;
 double p(double,double,double);
 double T(double);
 
+// v. anche lezione 1 e 4 per data blocking, e lez. 5 per calcolo sampling funzione con monte carlo
+
 int main() {
 
    int seed=23;
@@ -59,9 +61,14 @@ int main() {
    return 0;
 }
 
+double energy(double x, double s, double m) {
+    double DDPsi_over_Psi = ( m*m - 2*m*x*tanh(m*x/(s*s)) - s*s + x*x)/(2*pow(s,4));
+    return -DDPsi_over_Psi + Potential(x);
+}
 
-double p(double x,double mu, double sigma) {   // funzione d'onda
-   return exp(-pow((x-mu)/sigma,2)/2)+exp(-pow((x+mu)/sigma,2)/2);
+
+double p(double x,double m, double s) {   // funzione d'onda
+   return exp(-pow((x-m)/s,2)/2)+exp(-pow((x+m)/s,2)/2);
 
 }
 

@@ -66,11 +66,8 @@ int main (int argc, char *argv[]){
 
    H_SA[0] = H_sum_prog[n_blk-1];
 
-
    double beta_0 = beta;
 
-
- 
    //ESERCIZIO 8.2.1 e 8.2.2--------------------------------------------------------
    for(int i=1; i<n_step; i++) { //ciclo sulle possibili temperature con cui fare SA
 
@@ -113,8 +110,6 @@ int main (int argc, char *argv[]){
       outfile1 << beta_0+i*Delta_beta << setw(wd) << H_SA[i] << setw(wd) << H_err_SA[i] << setw(wd) << mi[i] << setw(wd) << sigma[i] << endl;
    }
    outfile1.close();
-
-
 
    //ESERCIZIO 8.2.3-----------------------------------------------------------
    //Una volta raggiunti valori stabili di mi e sigma (equilibrazione) si può campionare in modo più fine

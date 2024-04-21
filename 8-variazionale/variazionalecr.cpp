@@ -155,7 +155,6 @@ int main (int argc, char *argv[]){
       } 
  
    }
-
    ofstream outfile2("output_ESA.txt");
  
    for (int i=0; i<step; i++) {

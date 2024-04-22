@@ -12,9 +12,10 @@ using namespace arma;
 int seed[4];
 Random rnd;
 
-const int passiAnnealing=500; 
+const int passiAnnealing=1000; 
 vec mu(passiAnnealing);
 vec sigma(passiAnnealing);
+void annealing(int, double);
 
 bool metropolis(double&, double, double, double) ;
 void mediaBlocchi();
@@ -142,7 +143,9 @@ double delta_mu, delta_sigma;
 int main ()
 {
    rnd.SetSeed();   
-   rnd.SetPrimesCouple(24);
+   int seed=0; cout<<"inserisci seme: ";
+   cin>>seed;
+   rnd.SetPrimesCouple(seed);
       
    mu(0)=1.5; sigma(0)=1.1;
    string starting_mu = to_string(mu(0));
@@ -151,39 +154,8 @@ int main ()
    energiaAnnealing(0) = energiaMediaBlocchi(M_blocchi-1);
    
    double beta_0 = beta;
-   for(int i=1; i<passiAnnealing; i++) 
-   {
-      beta += delta_beta; 
-      delta_mu = 
-      	rnd.Rannyu(-Lmu,Lmu)/pow(beta,1./4.);
-      delta_sigma = 
-      	rnd.Rannyu(-Lsigma,Lsigma)/pow(beta,1./4.);
-  
-      mu(i) = mu(i-1) + delta_mu;
-      sigma(i) = sigma(i-1) + delta_sigma;
-      
-      double energiaTemp = energiaMediaBlocchi(M_blocchi-1); 
-      double erroreTemp = energiaErroreBlocchi(M_blocchi-1);
-
-      Reset(); valutaEnergia(mu(i),sigma(i));
-
-      double deltaEnergia = 
-      	energiaMediaBlocchi(M_blocchi-1) - energiaTemp;
-      double q = exp(-beta*(deltaEnergia)); 
-  
-      //Metropolis con simulated annealing
-      if(rnd.Rannyu() < q) 
-      {
-         energiaAnnealing(i) = energiaMediaBlocchi(M_blocchi-1);
-         erroreAnnealing(i) = energiaErroreBlocchi(M_blocchi-1);
-      } else 
-      {
-         energiaAnnealing(i) = energiaTemp;
-         erroreAnnealing(i) = erroreTemp;
-         mu(i) = mu(i) - delta_mu;
-         sigma(i) = sigma(i) - delta_sigma;
-      } 
-   }
+   
+   annealing(passiAnnealing,0.25);
 
    ofstream outfile1(
    	"risultati/energiaAnnealingEquilibrio.txt");
@@ -208,39 +180,8 @@ int main ()
 
    beta_0=beta; 
    
-   for(int i=1; i < passiAnnealing2; i++) 
-   {
-      beta += delta_beta;
-      delta_mu = 
-         rnd.Rannyu(-Lmu,Lmu) / pow(beta,.5);       
-      delta_sigma = 
-      	 rnd.Rannyu(-Lsigma,Lsigma) / pow(beta,.5);
-  
-      mu(i) = mu(i-1) + delta_mu;
-      sigma(i) = sigma(i-1) + delta_sigma;
-      
-      double energiaTemp = energiaMediaBlocchi(M_blocchi-1);
-      double erroreTemp = energiaErroreBlocchi(M_blocchi-1);
+   annealing(passiAnnealing2,0.5);
 
-      Reset(); valutaEnergia(mu(0), sigma(0));
-
-      double deltaEnergia = 
-      	energiaMediaBlocchi(M_blocchi-1) - energiaTemp;
-      double q = exp(-beta*(deltaEnergia)); 
-  
-      //Metropolis con simulated annealing
-      if(rnd.Rannyu() < q) 
-      {
-         energiaAnnealing(i) = energiaMediaBlocchi(M_blocchi-1);
-         erroreAnnealing(i) = energiaErroreBlocchi(M_blocchi-1);
-      } else 
-      {
-         energiaAnnealing(i) = energiaTemp;
-         erroreAnnealing(i) = erroreTemp;
-         mu(i) -= delta_mu;
-         sigma(i) -= delta_sigma;
-      } 
-   }
    ofstream outfile2("risultati/energiaAnnealing.txt");
  
    for (int i=0; i<passiAnnealing2; i++) 
@@ -273,6 +214,44 @@ int main ()
    outfile4.close();  
    rnd.SaveSeed(); 
    return 0;
+}
+
+void annealing(int numPassi,double potenza)
+{
+   for(int i=1; i < numPassi; i++) 
+   {
+      beta += delta_beta;
+      delta_mu = 
+         rnd.Rannyu(-Lmu,Lmu) / pow(beta,potenza);       
+      delta_sigma = 
+      	 rnd.Rannyu(-Lsigma,Lsigma) / pow(beta,potenza);
+  
+      mu(i) = mu(i-1) + delta_mu;
+      sigma(i) = sigma(i-1) + delta_sigma;
+      
+      double energiaTemp = energiaMediaBlocchi(M_blocchi-1);
+      double erroreTemp = energiaErroreBlocchi(M_blocchi-1);
+
+      Reset(); valutaEnergia(mu(i), sigma(i));
+
+      double deltaEnergia = 
+      	energiaMediaBlocchi(M_blocchi-1) - energiaTemp;
+      double q = exp(-beta*(deltaEnergia)); 
+  
+      //Metropolis con simulated annealing
+      if(rnd.Rannyu() < q) 
+      {
+         energiaAnnealing(i) = energiaMediaBlocchi(M_blocchi-1);
+         erroreAnnealing(i) = energiaErroreBlocchi(M_blocchi-1);
+      } else 
+      {
+         energiaAnnealing(i) = energiaTemp;
+         erroreAnnealing(i) = erroreTemp;
+         mu(i) -= delta_mu;
+         sigma(i) -= delta_sigma;
+      } 
+   }
+   return;
 }
 
 

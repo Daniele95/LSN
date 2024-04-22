@@ -169,21 +169,17 @@ int main ()
       	<< sigma(i) << endl;
    }
    outfile1.close();
-
+   
+   /*
    int passiAnnealing2 = passiAnnealing; 
    // valori di equilibrio:
    mu(0)=mu(passiAnnealing-1); 
    sigma(0)=sigma(passiAnnealing-1);
-   
    valutaEnergia(  mu(0), sigma(0)); 
    energiaAnnealing(0) = energiaMediaBlocchi(M_blocchi-1);
-
    beta_0=beta; 
-   
    annealing(passiAnnealing2,0.5);
-
    ofstream outfile2("risultati/energiaAnnealing.txt");
- 
    for (int i=0; i<passiAnnealing2; i++) 
    {
       outfile2 << beta_0 + i * delta_beta << setw(wd) 
@@ -193,7 +189,7 @@ int main ()
       << sigma(i) << endl;
    }
    outfile2.close();
-
+   */
 
    ofstream outfile3("risultati/energiaMinima.txt");   
    int indiceMin = energiaAnnealing.index_min();
@@ -212,7 +208,6 @@ int main ()
    for (int i=0; i<N_campionamenti; i++)
        outfile4 << posizioni(i) << endl;   
    outfile4.close();  
-   rnd.SaveSeed(); 
    return 0;
 }
 
@@ -238,7 +233,6 @@ void annealing(int numPassi,double potenza)
       	energiaMediaBlocchi(M_blocchi-1) - energiaTemp;
       double q = exp(-beta*(deltaEnergia)); 
   
-      //Metropolis con simulated annealing
       if(rnd.Rannyu() < q) 
       {
          energiaAnnealing(i) = energiaMediaBlocchi(M_blocchi-1);

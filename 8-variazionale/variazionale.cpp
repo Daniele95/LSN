@@ -1,204 +1,162 @@
 #include <iostream>
 #include <fstream>
-#include <ostream>
 #include <cmath>
+#include <random>
 #include <armadillo>
 #include "../random/random.h"
-#include <functional> 
-#include <iomanip> 
-#include <vector>
 
-// perché l'energia viene stampata vuota??
+// accettazione metropolis
+double centro=1.5; 
+int accettazioni = 0;
+Random& rnd;
+int M_campionamenti=1e5;
+int N_blocchi= 100;
 
+rowvec posizioni(M_campionamenti); 
+rowvec energia(M_campionamenti);
+rowvec media_prog(N_blocchi);
+rowvec errore_prog(N_blocchi);
 
-using namespace arma;
 using namespace std;
+using namespace arma;
 
-const double pi=3.1415927;
+// p(x) = |psi(x)|^2
+double probability(double x, double m, double s) 
+{
+   double psi = exp(-0.5*pow((x-m)/s,2)+
+   	 	exp(-0.5*pow((x+m)/s,2);
+   return 0.282095*pow(psi,2)/s/(1+exp(-pow(m/s,2)));
+}
 
-int seed[4];
-Random rnd;
+// energia della particella alla pos. x
+double energy(double x, double m, double s)
+{
+   double arg = m*x/(s*s);
+   double epot=pow(x,4)-2.5*pow(x,2);
+   double ekin = 
+   	+0.5*(s*s-m*m)/pow(s,4)
+   	-0.5*/pow(s,4)*pow(x,2)
+   	+arg*tanh(arg)/(s*s);
+   return ekin + epot;
+}
 
-// Simulation
-int nstep=3000000;
-double delta = 1.6;
+// media dell'energia su stato gaussiano:
+void valutaEnergia(double media, double sigma) 
+{
+    for (int i = 0; i < 50; i++) 
+        metropolis(centro, 1.8, media, sigma);
+             
+    for (int i = 0; i < M_campionamenti; i++) {
+        if (metropolis(centro, 1.8, media, sigma)) 
+            accettazioni++;        
+        posizioni[i] = centro;
+        energia[i] = energy(centro, media, sigma);
+    }
 
-double p(double,double,double);
-double T(double);
-double V(double);
+    mediaBlocco();
+}
 
-//medie a blocchi
-int n_samples=1e5; //# campionamenti di energia
-int n_blk=100; //blocchi di energia
-int L=n_samples/n_blk;
-rowvec r(n_samples);//posizioni
-rowvec H(n_samples); // energie
-rowvec H_sum_prog(n_blk);
-rowvec H_err_prog(n_blk);
+// metropolis (esploro "annusando"
+// la pdf con un cammino casuale)
+bool metropolis(double& x, double passo, 
+	 double media, double sigma) 
+{
+    double x_proposto;
+    bool accettato = false;
+    x_proposto = rand.Gauss(x, passo);
+    double alpha = 
+    	probability(x_proposto, media, sigma) /
+    	probability(x, media, sigma);
+    if (rand.Rannyu() < alpha) {
+        x = x_proposto;
+        accettato = true;
+    }
+    return accettato;
+}
 
-//Simulated Annealing
-const int n_step=1500; //numero di temperature per il SA
-double H_SA[n_step];
-double H_err_SA[n_step];
-double Lmi=1.5, Lsigma=1.5;
-double delta_mi, delta_sigma;
-double mi[n_step], sigma[n_step];
+// Calcola la media a blocchi e l'errore
+void mediaBlocco() {
+    int M_campionamenti = dati.n_elem;
+    int lunghezza_blocco = M_campionamenti / N_blocchi;
+    vec media(N_blocchi), media_quad(N_blocchi), somma_prog(N_blocchi), somma_prog_quad(N_blocchi);
 
-//Parametri
-double x=1.5; //inizializzazione casuale
-int Acceptance=0;
-double temp=1., beta=1./temp, Delta_beta=2.;
+    for (int i = 0; i < N_blocchi; i++) {
+        int inizio = i * lunghezza_blocco;
+        int fine = (i + 1) * lunghezza_blocco;
 
-//functions
-double integrand(double,double,double);
-void media(rowvec&,rowvec&,rowvec&,int,int);
-double errore(rowvec&,rowvec&, int);
+        media[i] = mean(dati.subvec(inizio, fine - 1));
+        media_quad[i] = pow(media[i], 2);
 
-bool metropolis(double&,double,Random&,double,double);
-void energia(double,double, int, int);
+        if (i == 0) {
+            somma_prog[i] = media[i];
+            somma_prog_quad[i] = media_quad[i];
+        } else {
+            somma_prog[i] = somma_prog[i - 1] + media[i];
+            somma_prog_quad[i] = somma_prog_quad[i - 1] + media_quad[i];
+        }
+    }
 
-//int Minimum_Index(double[],int);
-//double DDPsi(double,double,double);
-//void Reset(void);
+    for (int i = 0; i < N_blocchi; i++) {
+        media_blocchi[i] = somma_prog[i] / (i + 1);
+        errore_blocchi[i] = sqrt((somma_prog_quad[i] / (i + 1) - pow(media_blocchi[i], 2)) / i);
+    }
+}
 
-// v. anche lezione 1 e 4 per data blocking, e lez. 5 per calcolo sampling funzione con monte carlo
+// Simulated annealing algorithm using Metropolis block averages on a Gaussian probability distribution
+void simulatedAnnealing(double mean, double stddev, int n_samples, int n_blocks, const string& energyFileName, const string& trajectoryFileName) {
+    ofstream energyFile(energyFileName);
+    ofstream trajectoryFile(trajectoryFileName);
+
+    double temperature = 100.0; // Initial temperature
+    double coolingRate = 0.003; // Cooling rate
+
+    vec temperatures = linspace(temperature, 1.0, temperature / coolingRate + 1); 
+    
+   // Store the trajectory of mean and energy
+    vec trajectory(n_samples); 
+
+    double bestSolution = mean; // Initial solution
+    double bestCost = valutaEnergia(mean, stddev, n_samples, n_blocks); // Initial cost
+
+    energyFile << "# Temperature Steps Energy" << endl;
+
+    for (double temp : temperatures) {
+        double newMean = bestSolution + randu() * 0.1 - 0.05; // Generate a new solution near the current one
+        double newCost = valutaEnergia(newMean, stddev, n_samples, n_blocks); // Calculate the cost of the new solution
+
+        // If the new solution is better or satisfies the Boltzmann probability condition, accept it
+        if (newCost < bestCost || exp(-(newCost - bestCost) / temp) > randu()) {
+            bestSolution = newMean;
+            bestCost = newCost;
+        }
+
+        // Write energy plot data to file
+        energyFile << temp << " " << n_samples << " " << bestCost << endl;
+
+        // Store trajectory data
+        trajectory = join_horiz(trajectory, ones(n_samples) * temp);
+        trajectory = join_horiz(trajectory, ones(n_samples) * bestCost);
+    }
+
+    energyFile.close();
+
+    // Write trajectory data to file
+    trajectoryFile << "# Temperature Energy" << endl;
+    trajectory.save(trajectoryFile, raw_ascii);
+
+    trajectoryFile.close();
+}
 
 int main() {
+    double mean = 0.0; // Mean of the Gaussian distribution
+    double stddev = 1.0; // Standard deviation of the Gaussian distribution
+    int n_samples = 10000; // Number of Metropolis samples
+    int n_blocks = 100; // Number of blocks for block averaging
+    string energyFileName = "energy_plot.dat"; // File to write energy plot data
+    string trajectoryFileName = "trajectory_plot.dat"; // File to write trajectory data
 
-   int seed=23;
-   cout << "seme: "<<endl;
-   
-   rnd.SetSeed();
-   
-   rnd.SetPrimesCouple(seed);
-   double x = 0.; 
+    simulatedAnnealing(mean, stddev, n_samples, n_blocks, energyFileName, trajectoryFileName);
 
-   double integral = 0.;
-   int attempted = 0;
-   int accepted = 0;
-
-   double xNew = 0.;
-   double A = 0.;
-   
-   double mu=1.;
-   double dev=1.;
-
-   for (int i=0.; i<nstep; i++) {
-      xNew = x + T(x);
-      attempted ++;
-
-      if(p(x,mu,dev)==0.) A = 1.;
-      else A = min(1.,p(xNew,mu,dev)/p(x,mu,dev));
-
-      if (rnd.Rannyu() <= A){
-         x = xNew;
-         integral += x;
-         accepted++;
-      }
-   }
-   cout << "integrale di x: " 
-   	<<  integral/accepted << endl;
-   cout << "rate accettazione: " 
-   	<< double(accepted)/double(attempted) << endl;
-   
-   mi[0]=15.5; sigma[0]=20.1; 
-   // energia con metropolis
-   energia( sigma[0], mi[0], 1e4, 100);
-   
-   string starting_mi = to_string(mi[0]);
-   H_SA[0] = H_sum_prog[n_blk-1];
-   double beta_0 = beta;
-
-   ofstream outfile1("output_ESAeq.txt");
-   const int wd=20;
-
-   for (int i=0; i<n_step; i++) 
-      outfile1 << beta_0+i*Delta_beta 
-      	<< setw(wd) << H_SA[i] 
-      	<< setw(wd) << H_err_SA[i] 
-      	<< setw(wd) << mi[i] 
-      	<< setw(wd) << sigma[i] << endl;
-  
-   outfile1.close();
-
-   cout << "energia: " << H_sum_prog<< endl;
-   return 0;
+    return 0;
 }
 
-//elemento del ciclo d'integrazione
-bool metropolis(double &x, double step_size, 
-	Random &rand, double s, double m) { 
-    double x_proposed;
-    bool A = false;
-    x_proposed = rand.Gauss(x, step_size);
-    double alpha = 
-    	pow(p(x_proposed,s,m),2) / pow(p(x,s,m),2);
-    if (rand.Rannyu() < alpha){
-        x = x_proposed;
-        A = true;
-    }
-    return A;
-}
-
-// HPsi/Psi
-double integrand(double x, double s, double m) {
-    return -( m*m - 2*m*x*tanh(m*x/(s*s)) 
-    	- s*s + x*x)/(2*pow(s,4)) + V(x);
-}
-
-void energia(double s,double m, int N_samp, int N_blocks) {
-   for (int i=0; i<50; i++) metropolis(x, 1.8, rnd, s, m);
-   for (int i=0; i<N_samp; i++) {       
-      if ( metropolis(x, 1.8, rnd, s, m) ) Acceptance++;
-      r[i] = x;
-      H[i] = integrand(x,s,m);
-   }
-   media( H,H_sum_prog,H_err_prog,
-   	N_blocks, N_samp/N_blocks );
-}
-
-void media(rowvec& r, rowvec& Mean, rowvec& Errors, 
-	int N, int L) {
-   rowvec ave(N);
-   rowvec av2(N);
-   rowvec su2_prog(N);
-
-   for (int i = 0; i < N; i++) {
-      double sum1 = 0.0;
-      for (int j = 0; j < L; j++) {
-         int k = j + i * L;
-         sum1 += r[k];
-      }
-      ave[i] = sum1 / L;
-      av2[i] = pow(ave[i], 2);
-   }
-   for (int i = 0; i < N; i++) {
-        for (int j = 0; j <= i; j++) {
-            Mean[i] += ave[j];
-            su2_prog[i] += av2[j];
-        }
-        // realizza il /n nel calcolo
-        // della media sui valori dei blocchi
-        Mean[i]/=(i+1); 
-        su2_prog[i]/=(i+1);
-        Errors[i] = errore(Mean, su2_prog, i);
-    }
-    return;
-}
-
-double errore(rowvec& AV, rowvec& AV2, int n) {
-   if (n == 0) return 0.0;
-   else return sqrt((AV2[n] - AV[n]*AV[n])/n);
-}
-
-double p(double x,double m, double s) {
-   return exp(-pow((x-m)/s,2)/2)+exp(-pow((x+m)/s,2)/2);
-}
-
-double V(double x){
-   return pow(x,4)-5*pow(x,2)/2;
-}
-
-double T(double x) {
-   return rnd.Rannyu() * delta - delta/2.;
-}

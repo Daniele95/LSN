@@ -12,7 +12,7 @@ using namespace arma;
 int seed[4];
 Random rnd;
 
-const int passiAnnealing=1500; 
+const int passiAnnealing=500; 
 vec mu(passiAnnealing);
 vec sigma(passiAnnealing);
 
@@ -125,16 +125,14 @@ double error(vec media, vec mediaQuadra, int i)
    	sqrt((mediaQuadra(i) - media(i)*media(i)) / i);
 }
 
-int Acceptance=0;
 void Reset() 
 {
-    Acceptance=0;
+    accettazioni=0;
     for(int i=0; i<M_blocchi; i++) {
       energiaMediaBlocchi[i]=0;
       energiaErroreBlocchi[i]=0;
     }
 }
-
 
 vec energiaAnnealing(passiAnnealing);
 vec erroreAnnealing(passiAnnealing);
@@ -143,14 +141,15 @@ double Lmu=1.5, Lsigma=1.5;
 double delta_mu, delta_sigma;
 int main ()
 {
-   rnd.SetSeed();
+   rnd.SetSeed();   
+   rnd.SetPrimesCouple(24);
       
-   mu(0)=15.5; sigma(0)=20.1;
+   mu(0)=1.5; sigma(0)=1.1;
    string starting_mu = to_string(mu(0));
    
    valutaEnergia( mu(0), sigma(0) );
    energiaAnnealing(0) = energiaMediaBlocchi(M_blocchi-1);
-
+   
    double beta_0 = beta;
    for(int i=1; i<passiAnnealing; i++) 
    {

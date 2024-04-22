@@ -146,8 +146,8 @@ double delta_mu, delta_sigma;
 int main ()
 {
    rnd.SetSeed();   
-   int seed=0; cout<<"inserisci seme: ";
-   cin>>seed;
+   int seed=23; 
+   //cout<<"inserisci seme: ";cin>>seed;
    rnd.SetPrimesCouple(seed);
       
    mu(0)=1.5; sigma(0)=1.1;

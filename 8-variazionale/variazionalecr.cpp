@@ -308,7 +308,7 @@ double error(vector<double> &AV, vector<double> &AV2, int n) {
         return sqrt((AV2[n] - AV[n]*AV[n])/n);
    }
 }
-
+//MeanAndErr(H,H_sum_prog,H_err_prog,N_blocks, N_samp/N_blocks );
 void MeanAndErr(vector<double> &r, vector<double> &Mean, vector<double> &Errors, int N, int L) {
 
    vector<double> ave(N);

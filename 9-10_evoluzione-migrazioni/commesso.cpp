@@ -2,7 +2,6 @@
 #include <fstream>
 #include <ostream>
 #include <cmath>
-#include "commesso.h"
 #include <armadillo>
 #include <unordered_map>
 #include "mpi.h"
@@ -10,6 +9,17 @@
 using namespace arma;
 using namespace std;
 //make && mpiexec -np 4 main.exe
+
+
+
+// Random numbers
+#include "../random/random.h"
+int seed[4];
+Random rnd;
+
+
+// Simulation
+// Functions
 
 // PARAMETRI
 

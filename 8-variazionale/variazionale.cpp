@@ -12,7 +12,7 @@ using namespace arma;
 int seed[4];
 Random rnd;
 
-const int passiAnnealing=1000; 
+const int passiAnnealing=1500; 
 vec mu(passiAnnealing);
 vec sigma(passiAnnealing);
 void annealing(int, double);
@@ -38,7 +38,10 @@ double probability(double x, double m, double s)
 {
    double psi = exp(-0.5*pow((x-m)/s,2))+
    	 	exp(-0.5*pow((x+m)/s,2));
-   return 0.282095*pow(psi,2)/s/(1+exp(-pow(m/s,2)));
+   //double psiZeroQuadro=0.2820947917738781/s
+   //	/(1+exp(-pow(m/s,2)));
+   
+   return pow(psi,2);
 }
 
 // energia della particella alla pos. x
@@ -228,22 +231,22 @@ void annealing(int numPassi,double potenza)
       double erroreTemp = energiaErroreBlocchi(M_blocchi-1);
 
       Reset(); valutaEnergia(mu(i), sigma(i));
-
+      
       double deltaEnergia = 
       	energiaMediaBlocchi(M_blocchi-1) - energiaTemp;
       double q = exp(-beta*(deltaEnergia)); 
-  
+      
       if(rnd.Rannyu() < q) 
       {
          energiaAnnealing(i) = energiaMediaBlocchi(M_blocchi-1);
          erroreAnnealing(i) = energiaErroreBlocchi(M_blocchi-1);
-      } else 
+      } else
       {
          energiaAnnealing(i) = energiaTemp;
          erroreAnnealing(i) = erroreTemp;
          mu(i) -= delta_mu;
          sigma(i) -= delta_sigma;
-      } 
+      }
    }
    return;
 }

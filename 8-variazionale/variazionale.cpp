@@ -3,7 +3,11 @@
 #include <cmath>
 #include <random>
 #include <armadillo>
+#include <iomanip> 
 #include "../random/random.h"
+
+using namespace std;
+using namespace arma;
 
 int seed[4];
 Random rnd;
@@ -12,10 +16,13 @@ const int passiAnnealing=1500;
 vec mu(passiAnnealing);
 vec sigma(passiAnnealing);
 
+bool metropolis(double&, double, double, double) ;
+void mediaBlocchi();
+double error(vec, vec, int i);
+
 // accettazione metropolis
 double centro=1.5; 
 int accettazioni = 0;
-Random& rnd;
 int N_campionamenti=1e5;
 int M_blocchi= 100;
 int L_dimBlocco=N_campionamenti/M_blocchi;
@@ -25,14 +32,11 @@ vec energia(N_campionamenti);
 vec energiaMediaBlocchi(M_blocchi);
 vec energiaErroreBlocchi(M_blocchi);
 
-using namespace std;
-using namespace arma;
-
 // p(x) = |psi(x)|^2
 double probability(double x, double m, double s) 
 {
-   double psi = exp(-0.5*pow((x-m)/s,2)+
-   	 	exp(-0.5*pow((x+m)/s,2);
+   double psi = exp(-0.5*pow((x-m)/s,2))+
+   	 	exp(-0.5*pow((x+m)/s,2));
    return 0.282095*pow(psi,2)/s/(1+exp(-pow(m/s,2)));
 }
 
@@ -43,7 +47,7 @@ double energy(double x, double m, double s)
    double epot=pow(x,4)-2.5*pow(x,2);
    double ekin = 
    	 0.5*(s*s-m*m)/pow(s,4)
-   	-0.5*/pow(s,4)*pow(x,2)
+   	-0.5*pow(x,2)/pow(s,4)
    	+arg*tanh(arg)/(s*s);
    return ekin + epot;
 }
@@ -70,11 +74,11 @@ bool metropolis(double& x, double passo,
 {
     double x_proposto;
     bool accettato = false;
-    x_proposto = rand.Gauss(x, passo);
+    x_proposto = rnd.Gauss(x, passo);
     double alpha = 
     	probability(x_proposto, media, sigma) /
     	probability(x, media, sigma);
-    if (rand.Rannyu() < alpha) {
+    if (rnd.Rannyu() < alpha) {
         x = x_proposto;
         accettato = true;
     }
@@ -118,9 +122,10 @@ double error(vec media, vec mediaQuadra, int i)
 {
    if (i == 0) return 0.0;
    else return 
-   	sqrt((mediaQuadra(i) - media(i)*media(i))/n);
+   	sqrt((mediaQuadra(i) - media(i)*media(i)) / i);
 }
 
+int Acceptance=0;
 void Reset() 
 {
     Acceptance=0;
@@ -135,10 +140,9 @@ vec energiaAnnealing(passiAnnealing);
 vec erroreAnnealing(passiAnnealing);
 double Temperatura=1., beta=1./Temperatura, delta_beta=2.;
 double Lmu=1.5, Lsigma=1.5;
+double delta_mu, delta_sigma;
 int main ()
 {
-   int seed=23;
-   cout << "seme: "<<endl;  
    rnd.SetSeed();
       
    mu(0)=15.5; sigma(0)=20.1;
@@ -182,7 +186,8 @@ int main ()
       } 
    }
 
-   ofstream outfile1("energiaAnnealingEquilibrio.txt");
+   ofstream outfile1(
+   	"risultati/energiaAnnealingEquilibrio.txt");
    const int wd=20;
 
    for (int i=0; i < passiAnnealing; i++) {
@@ -237,7 +242,7 @@ int main ()
          sigma(i) -= delta_sigma;
       } 
    }
-   ofstream outfile2("energiaAnnealing.txt");
+   ofstream outfile2("risultati/energiaAnnealing.txt");
  
    for (int i=0; i<passiAnnealing2; i++) 
    {
@@ -250,7 +255,7 @@ int main ()
    outfile2.close();
 
 
-   ofstream outfile3("energiaMinima.txt");   
+   ofstream outfile3("risultati/energiaMinima.txt");   
    int indiceMin = energiaAnnealing.index_min();
    Reset();valutaEnergia(mu(indiceMin), sigma(indiceMin));   
    for (int i=0; i<M_blocchi; i++) 
@@ -263,7 +268,7 @@ int main ()
    outfile3.close();
 
 
-   ofstream outfile4("istogramma-posizioni.txt");
+   ofstream outfile4("risultati/istogramma-posizioni.txt");
    for (int i=0; i<N_campionamenti; i++)
        outfile4 << posizioni(i) << endl;   
    outfile4.close();  

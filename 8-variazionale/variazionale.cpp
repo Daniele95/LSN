@@ -5,6 +5,7 @@
 #include <armadillo>
 #include <iomanip> 
 #include "../random/random.h"
+#include "../utils/utils.h"
 
 using namespace std;
 using namespace arma;
@@ -18,7 +19,6 @@ vec sigma(passiAnnealing);
 void annealing(int, double);
 
 bool metropolis(double&, double, double, double) ;
-void mediaBlocchi();
 double error(vec, vec, int i);
 
 // accettazione metropolis
@@ -68,7 +68,8 @@ void valutaEnergia(double media, double sigma)
         posizioni(i) = centro;
         energia(i) = energy(centro, media, sigma);
     }
-    mediaBlocchi();
+    mediaBlocchi( energia,  energiaMediaBlocchi, 
+	energiaErroreBlocchi,  M_blocchi,  L_dimBlocco) ;
 }
 
 // metropolis (esploro "annusando"
@@ -89,52 +90,12 @@ bool metropolis(double& x, double passo,
     return accettato;
 }
 
-void mediaBlocchi() 
-{
-   vec energiaMediaTemp(M_blocchi);
-   vec energiaErroreTemp(M_blocchi);
-
-   for (int i = 0; i < M_blocchi; i++) 
-   {
-      energiaMediaTemp(i) =
-         sum(energia.subvec(
-            i * L_dimBlocco, 
-            (i + 1) * L_dimBlocco - 1)) 
-            / L_dimBlocco;
-   }
-
-   for (int i = 0; i < M_blocchi; i++) {
-        for (int j = 0; j <= i; j++) 
-        {
-            energiaMediaBlocchi(i) 
-            	+= energiaMediaTemp(j);
-            energiaErroreTemp(i) 
-            	+= pow(energiaMediaTemp(j), 2);
-        } 
-        // divido per il numero
-        // di esperimenti fatti:
-        energiaMediaBlocchi(i)/=(i+1);
-        energiaErroreTemp(i)/=(i+1);
-        energiaErroreBlocchi(i) =
-           error(energiaMediaBlocchi,
-            energiaErroreTemp, i);
-    }
-    return;
-}
-
-double error(vec media, vec mediaQuadra, int i) 
-{
-   if (i == 0) return 0.0;
-   else return 
-   	sqrt((mediaQuadra(i) - media(i)*media(i)) / i);
-}
-
 void Reset() 
 {
     accettazioni=0;
     for(int i=0; i<M_blocchi; i++) {
-      energiaMediaBlocchi[i]=0;
-      energiaErroreBlocchi[i]=0;
+      energiaMediaBlocchi(i)=0;
+      energiaErroreBlocchi(i)=0;
     }
 }
 

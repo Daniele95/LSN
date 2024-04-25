@@ -11,6 +11,9 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 #ifndef __Random__
 #define __Random__
 
+#include <armadillo>
+using namespace arma;
+
 // This class contains functions for generating random numbers using the RANNYU algorithm
 class Random {
 
@@ -34,8 +37,10 @@ public:
   double Rannyu(void);
   // Method to generate a random number in the range [min,max)
   double Rannyu(double min, double max);
+  vec Rannyu(vec centro, double passo);
   // Method to generate a random number with a Gaussian distribution
   double Gauss(double mean, double sigma);
+  vec Gauss(vec mean, double sigma);
 };
 
 #endif // __Random__

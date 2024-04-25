@@ -12,9 +12,11 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 #include <fstream>
 #include <cmath>
 #include <cstdlib>
+#include <armadillo>
 #include "random.h"
 
 using namespace std;
+using namespace arma;
 
 Random :: Random(){}
 // Default constructor, does not perform any action
@@ -41,9 +43,21 @@ double Random :: Gauss(double mean, double sigma) {
    return mean + x * sigma;
 }
 
+vec Random :: Gauss(vec mean, double sigma) {
+   vec rand(3);
+   for (int j = 0; j < 3; j++) rand(j) = Gauss(mean(j),sigma); 
+   return rand;
+}
+
 double Random :: Rannyu(double min, double max){
    // This function generates a random number in the range [min, max)
    return min+(max-min)*Rannyu();
+}
+
+vec Random :: Rannyu(vec mean, double passo) {
+   vec rand(3);
+   for (int j = 0; j < 3; j++) rand(j) = Rannyu(mean(j)-passo,mean(j)+passo); 
+   return rand;
 }
 
 double Random :: Rannyu(void){

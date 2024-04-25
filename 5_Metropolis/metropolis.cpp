@@ -90,6 +90,9 @@ void calculateWavefunction( bool groundState,
    outFilePos.open(filePosizioni,ios::trunc);
    outFilePos.close();
    
+   cout <<"campiono lo stato "+stato+" con passo "
+   	<< passo<<" di tipo "+tipoPasso<<endl;
+   cout <<"equilibrazione: ";
    //EQUILIBRAZIONE -------------------------------------
    posizione=posIniziale;
    accettazione=0;
@@ -101,9 +104,10 @@ void calculateWavefunction( bool groundState,
        scriviSuFile(posizione,filePosizioni);
    }
    
-   cout << "accettazione "+ tipoPasso+" "
+   cout << "accettazione "
    	<< double(accettazione)/M_equilibrazione << endl;
 
+   cout <<"simulazione: ";
    //INIZIO SIMULAZIONE -------------------------------------
    accettazione = 0; 
 
@@ -119,8 +123,8 @@ void calculateWavefunction( bool groundState,
       if( i%100 == 0 ) scriviSuFile(posizione,filePosizioni);
    }
 
-   cout << "accettazione " + tipoPasso+" "  
-   << double(accettazione)/M_campionamenti << endl;
+   cout << "accettazione "  
+   << double(accettazione)/M_campionamenti << endl<< endl;
 
    vec sum_prog(N_blocchi);
    vec err_prog(N_blocchi);
@@ -144,12 +148,12 @@ int main()
    rnd.SetPrimesCouple(seed);	
    
    // passo uniforme:
-   calculateWavefunction(0,0,1.4);
-   calculateWavefunction(1,0,2.5);
+   calculateWavefunction(0,1,1.4);
+   calculateWavefunction(1,1,2.5);
    
    // passo gaussiano:
-   calculateWavefunction(0,1,0.8);
-   calculateWavefunction(1,1,1.7);
+   calculateWavefunction(0,0,0.8);
+   calculateWavefunction(1,0,1.7);
    return 0;
 }
 

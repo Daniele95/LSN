@@ -12,7 +12,7 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 #define __NVT__
 
 //Random numbers
-#include "random.h"
+#include "../random/random.h"
 int seed[4];
 Random rnd;
 

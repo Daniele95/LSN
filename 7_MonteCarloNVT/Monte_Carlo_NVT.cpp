@@ -64,7 +64,7 @@ void Input(void)
    input.close();
   
 //Read input informations
-  ReadInput.open("input.dat");
+  ReadInput.open("config/input.dat");
 
   ReadInput >> temp;
   beta = 1.0/temp;
@@ -116,7 +116,7 @@ void Input(void)
 
 //Read initial configuration
   cout << "Read initial configuration from file config.0 " << endl << endl;
-  ReadConf.open("config.0");
+  ReadConf.open("config/config.0");
   for (int i=0; i<npart; ++i)
   {
     ReadConf >> x[i] >> y[i] >> z[i];
@@ -291,10 +291,10 @@ void Averages(int iblk) //Print results for current block
     cout << "Block number " << iblk << endl;
     cout << "Acceptance rate " << accepted/attempted << endl << endl;
     
-    Epot.open("output.epot.0",ios::app);
-    Pres.open("output.pres.0",ios::app);
-    Gofr.open("output.gofr.0",ios::app);
-   // Gave.open("output.gave.0",ios::app);
+    Epot.open("risultati/output.epot.0",ios::app);
+    Pres.open("risultati/output.pres.0",ios::app);
+    Gofr.open("risultati/output.gofr.0",ios::app);
+   // Gave.open("risultati/output.gave.0",ios::app);
     
     stima_pot = blk_av[iv]/blk_norm/(double)npart + vtail; //Potential energy
     glob_av[iv] += stima_pot;
@@ -341,14 +341,14 @@ void ConfFinal(void)
   ofstream WriteConf,Gave;
 
    const int wd=12;
-  Gave.open("output.gave.0",ios::app);
+  Gave.open("risultati/output.gave.0",ios::app);
     
   for (int k=igofr; k<igofr+nbins; ++k){
       Gave << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)nblk << setw(wd) << err_gofr << endl;
   }
 
   cout << "Print final configuration to file config.final " << endl << endl;
-  WriteConf.open("config.final");
+  WriteConf.open("config/config.final");
   for (int i=0; i<npart; ++i)
   {
     WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;
@@ -356,7 +356,7 @@ void ConfFinal(void)
   WriteConf.close();
 
 
-  rnd.SaveSeed();
+  //rnd.SaveSeed();
 }
 
 void ConfXYZ(int nconf){ //Write configuration in .xyz format

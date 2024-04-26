@@ -13,5 +13,3 @@
   ReadInput >> delta;
   ReadInput >> nblk;
   ReadInput >> nstep;
-  
-  

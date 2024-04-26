@@ -26,11 +26,11 @@ int main()
     Reset(iblk);   //Reset block averages
     for(int istep=1; istep <= nstep; ++istep)
     {
-      Move();
+      Move(iblk, istep);
       Measure();
       Accumulate(); //Update block averages
       if(istep%10 == 0){
-//        ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
+        //ConfXYZ(nconf);
         nconf += 1;
       }
     }
@@ -136,7 +136,7 @@ void Input(void)
 }
 
 
-void Move(void)
+void Move(int iblk, int istep)
 {
   int o;
   double p, energy_old, energy_new;
@@ -323,7 +323,7 @@ void Averages(int iblk) //Print results for current block
 //g(r)
 
     for (int k=igofr; k<igofr+nbins; ++k){
-  //      Gofr << setw(wd) << iblk << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)iblk << setw(wd) << err_gofr << endl;
+        Gofr << setw(wd) << iblk << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)iblk << setw(wd) << err_gofr << endl;
     }
 	
 	
@@ -348,7 +348,7 @@ void ConfFinal(void)
   }
 
   cout << "Print final configuration to file config.final " << endl << endl;
-  WriteConf.open("config/config.final");
+  WriteConf.open("risultati/config.final");
   for (int i=0; i<npart; ++i)
   {
     WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;

@@ -48,20 +48,25 @@ void Input(void)
 
   cout << "Classic Lennard-Jones fluid        " << endl;
   cout << "Monte Carlo simulation             " << endl << endl;
-  cout << "Interatomic potential v(r) = 4 * [(1/r)^12 - (1/r)^6]" << endl << endl;
-  cout << "Boltzmann weight exp(- beta * sum_{i<j} v(r_ij) ), beta = 1/T " << endl << endl;
+  cout << "Interatomic potential v(r) ="<<
+  	" 4 * [(1/r)^12 - (1/r)^6]" << endl << endl;
+  cout << "Boltzmann weight exp(- beta * sum_{i<j} v(r_ij) )"<<
+  	", beta = 1/T " << endl << endl;
   cout << "The program uses Lennard-Jones units " << endl;
 
 //Read seed for random numbers
    int p1, p2;
-   ifstream Primes("Primes");
+   ifstream Primes("../random/Primes");
    Primes >> p1 >> p2 ;
    Primes.close();
 
-   ifstream input("seed.in");
+   ifstream input("../random/seed.in");
    input >> seed[0] >> seed[1] >> seed[2] >> seed[3];
    rnd.SetRandom(seed,p1,p2);
    input.close();
+  
+   rnd.SetSeed();   
+   rnd.SetPrimesCouple(23);
   
 //Read input informations
   ReadInput.open("config/input.dat");

@@ -26,7 +26,7 @@ int main()
     Reset(iblk);   //Reset block averages
     for(int istep=1; istep <= nstep; ++istep)
     {
-      Move(iblk, istep);
+      Move();
       Measure();
       Accumulate(); //Update block averages
       if(istep%10 == 0){
@@ -141,7 +141,7 @@ void Input(void)
 }
 
 
-void Move(int iblk, int istep)
+void Move(void)
 {
   int o;
   double p, energy_old, energy_new;

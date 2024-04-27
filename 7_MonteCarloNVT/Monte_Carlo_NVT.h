@@ -48,7 +48,7 @@ void Input(void);
 void Reset(int);
 void Accumulate(void);
 void Averages(int);
-void Move(int,int);
+void Move(void);
 void ConfFinal(void);
 void ConfXYZ(int);
 void Measure(void);

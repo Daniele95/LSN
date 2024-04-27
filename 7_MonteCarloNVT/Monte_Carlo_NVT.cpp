@@ -21,6 +21,7 @@ int main()
 { 
   Input(); //Inizialization
   int nconf = 1;
+  cout <<"acceptance: "<<endl;
   for(int iblk=1; iblk <= nblk; ++iblk) //Simulation
   {
     Reset(iblk);   //Reset block averages
@@ -41,6 +42,7 @@ int main()
   return 0;
 }
 
+string cartellaMadre="";
 
 void Input(void)
 {
@@ -99,6 +101,8 @@ void Input(void)
   ReadInput >> nblk;
 
   ReadInput >> nstep;
+  
+  ReadInput >>cartellaMadre;
 
   cout << "The program perform Metropolis moves with uniform translations" << endl;
   cout << "Moves parameter = " << delta << endl;
@@ -286,20 +290,34 @@ void Accumulate(void) //Update block averages
 }
 
 
+
+void printProgressBar(int progress, int total) {
+    const int barWidth = 40;
+    float percent = static_cast<float>(progress) / total;
+    int numChars = static_cast<int>(percent * barWidth);
+    cout << "[";
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < numChars) cout << "=";
+        else cout << " ";
+    }
+    cout << "] " << int(percent * 100.0) << " %\r";
+    cout.flush();
+}
+
 void Averages(int iblk) //Print results for current block
 {
-    
    double r, gdir;
    ofstream Gofr, Gave, Epot, Pres;
    const int wd=12;
+   
+    cout << "\r"<<fixed << setprecision(6)
+    	<< accepted/attempted<<" " << flush;
+    printProgressBar(iblk,nblk);
     
-    cout << "Block number " << iblk << endl;
-    cout << "Acceptance rate " << accepted/attempted << endl << endl;
-    
-    Epot.open("risultati/output.epot.0",ios::app);
-    Pres.open("risultati/output.pres.0",ios::app);
-    Gofr.open("risultati/output.gofr.0",ios::app);
-   // Gave.open("risultati/output.gave.0",ios::app);
+    Epot.open(cartellaMadre+"output.epot.0",ios::app);
+    Pres.open(cartellaMadre+"output.pres.0",ios::app);
+    Gofr.open(cartellaMadre+"output.gofr.0",ios::app);
+   // Gave.open(cartellaMadre+"output.gave.0",ios::app);
     
     stima_pot = blk_av[iv]/blk_norm/(double)npart + vtail; //Potential energy
     glob_av[iv] += stima_pot;
@@ -333,7 +351,7 @@ void Averages(int iblk) //Print results for current block
 	
 	
 
-    cout << "----------------------------" << endl << endl;
+    //cout << "----------------------------" << endl << endl;
 
     Epot.close();
     Pres.close();
@@ -346,14 +364,14 @@ void ConfFinal(void)
   ofstream WriteConf,Gave;
 
    const int wd=12;
-  Gave.open("risultati/output.gave.0",ios::app);
+  Gave.open(cartellaMadre+"output.gave.0",ios::app);
     
   for (int k=igofr; k<igofr+nbins; ++k){
       Gave << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)nblk << setw(wd) << err_gofr << endl;
   }
 
-  cout << "Print final configuration to file config.final " << endl << endl;
-  WriteConf.open("risultati/config.final");
+  cout <<endl<< "Print final configuration to file config.final " << endl << endl;
+  WriteConf.open(cartellaMadre+"config.final");
   for (int i=0; i<npart; ++i)
   {
     WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;

@@ -38,9 +38,6 @@ double probability(double x, double m, double s)
 {
    double psi = exp(-0.5*pow((x-m)/s,2))+
    	 	exp(-0.5*pow((x+m)/s,2));
-   //double psiZeroQuadro=0.2820947917738781/s
-   //	/(1+exp(-pow(m/s,2)));
-   
    return pow(psi,2);
 }
 
@@ -108,7 +105,6 @@ int main ()
 {
    rnd.SetSeed();   
    int seed=23; 
-   //cout<<"inserisci seme: ";cin>>seed;
    rnd.SetPrimesCouple(seed);
       
    mu(0)=1.5; sigma(0)=1.1;
@@ -133,27 +129,6 @@ int main ()
       	<< sigma(i) << endl;
    }
    outfile1.close();
-   
-   /*
-   int passiAnnealing2 = passiAnnealing; 
-   // valori di equilibrio:
-   mu(0)=mu(passiAnnealing-1); 
-   sigma(0)=sigma(passiAnnealing-1);
-   valutaEnergia(  mu(0), sigma(0)); 
-   energiaAnnealing(0) = energiaMediaBlocchi(M_blocchi-1);
-   beta_0=beta; 
-   annealing(passiAnnealing2,0.5);
-   ofstream outfile2("risultati/energiaAnnealing.txt");
-   for (int i=0; i<passiAnnealing2; i++) 
-   {
-      outfile2 << beta_0 + i * delta_beta << setw(wd) 
-      << energiaAnnealing(i) << setw(wd) 
-      << erroreAnnealing(i) << setw(wd) 
-      << mu(i) << setw(wd) 
-      << sigma(i) << endl;
-   }
-   outfile2.close();
-   */
 
    ofstream outfile3("risultati/energiaMinima.txt");   
    int indiceMin = energiaAnnealing.index_min();

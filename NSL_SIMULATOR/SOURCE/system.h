@@ -85,7 +85,7 @@ public: // Function declarations
   void Verlet();              // Perform Verlet integration step
   double Force(int i, int dim); // Calculate force on a particle along a dimension
   double Boltzmann(int i, bool xnew); // Calculate Boltzmann factor for Metropolis acceptance
-
+  void printProgressBar(int , int );
 };
 
 #endif // __System__

@@ -523,14 +523,19 @@ void System :: measure(){ // Measure properties
   if (_measure_penergy or _measure_pressure or _measure_gofr) {
     for (int i=0; i<_npart-1; i++){
       for (int j=i+1; j<_npart; j++){
-        distance(0) = this->pbc( _particle(i).getposition(0,true) - _particle(j).getposition(0,true), 0);
-        distance(1) = this->pbc( _particle(i).getposition(1,true) - _particle(j).getposition(1,true), 1);
-        distance(2) = this->pbc( _particle(i).getposition(2,true) - _particle(j).getposition(2,true), 2);
+        distance(0) = this->pbc( _particle(i).getposition(0,true) -
+        	 _particle(j).getposition(0,true), 0);
+        distance(1) = this->pbc( _particle(i).getposition(1,true) -
+        	 _particle(j).getposition(1,true), 1);
+        distance(2) = this->pbc( _particle(i).getposition(2,true) -
+        	 _particle(j).getposition(2,true), 2);
         dr = sqrt( dot(distance,distance) );
         // GOFR ... TO BE FIXED IN EXERCISE 7
         if(dr < _r_cut){
-          if(_measure_penergy)  penergy_temp += 1.0/pow(dr,12) - 1.0/pow(dr,6); // POTENTIAL ENERGY
-          // PRESSURE ... TO BE FIXED IN EXERCISE 4 
+          if(_measure_penergy)  
+            penergy_temp +=1.0/pow(dr,12) - 1.0/pow(dr,6); // POTENTIAL ENERGY
+            // PRESSURE for EXERCISE 4:
+            virial += 48 * (1.0/pow(dr,12) - 0.5*1.0/pow(dr,6) );
         }
       }
     }
@@ -542,7 +547,8 @@ void System :: measure(){ // Measure properties
   }
   // KINETIC ENERGY ////////////////////////////////////////////////////////////
   if (_measure_kenergy){
-    for (int i=0; i<_npart; i++) kenergy_temp += 0.5 * dot( _particle(i).getvelocity() , _particle(i).getvelocity() ); 
+    for (int i=0; i<_npart; i++) kenergy_temp += 0.5 *
+    	 dot( _particle(i).getvelocity() , _particle(i).getvelocity() ); 
     kenergy_temp /= double(_npart);
     _measurement(_index_kenergy) = kenergy_temp;
   }
@@ -561,9 +567,12 @@ void System :: measure(){ // Measure properties
     }
   }
   // TEMPERATURE ///////////////////////////////////////////////////////////////
-  if (_measure_temp and _measure_kenergy) _measurement(_index_temp) = (2.0/3.0) * kenergy_temp;
-  // PRESSURE //////////////////////////////////////////////////////////////////
-// TO BE FIXED IN EXERCISE 4
+  if (_measure_temp and _measure_kenergy) 
+    _measurement(_index_temp) = (2.0/3.0) * kenergy_temp;
+  // PRESSURE : TO BE FIXED IN EXERCISE 4
+  if (_measure_pressure) 
+    _measurement(_index_pressure) = virial;
+    
   // MAGNETIZATION /////////////////////////////////////////////////////////////
 // TO BE FIXED IN EXERCISE 6
   // SPECIFIC HEAT /////////////////////////////////////////////////////////////
@@ -633,8 +642,18 @@ void System :: averages(int blk){
           << setw(12) << this->error(sum_average, sum_ave2, blk) << endl;
     coutf.close();
   }
-  // PRESSURE //////////////////////////////////////////////////////////////////
-  // TO BE FIXED IN EXERCISE 4
+  // PRESSURE for EXERCISE 4:
+  if (_measure_pressure){
+    coutf.open("../OUTPUT/pressure.dat",ios::app);
+    average  = _average(_index_pressure);
+    sum_average = _global_av(_index_pressure);
+    sum_ave2 = _global_av2(_index_pressure);
+    coutf << setw(12) << blk
+          << setw(12) << average
+          << setw(12) << sum_average/double(blk)
+          << setw(12) << this->error(sum_average, sum_ave2, blk) << endl;
+    coutf.close();
+  }
   // GOFR //////////////////////////////////////////////////////////////////////
   // TO BE FIXED IN EXERCISE 7
   // MAGNETIZATION /////////////////////////////////////////////////////////////
@@ -666,6 +685,20 @@ int System :: get_nbl(){
 int System :: get_nsteps(){
   return _nsteps;
 }
+
+void System :: printProgressBar(int progress, int total) {
+    const int barWidth = 40;
+    float percent = static_cast<float>(progress) / total;
+    int numChars = static_cast<int>(percent * barWidth);
+    cout << "[";
+    for (int i = 0; i < barWidth; ++i) {
+        if (i < numChars) cout << "=";
+        else cout << " ";
+    }
+    cout << "] " << int(percent * 100.0) << " %\r";
+    cout.flush();
+}
+
 
 /****************************************************************
 *****************************************************************

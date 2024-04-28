@@ -23,6 +23,7 @@ int main (int argc, char *argv[]){
 
   for(int i=0; i < SYS.get_nbl(); i++){ //loop over blocks
     for(int j=0; j < SYS.get_nsteps(); j++){ //loop over steps in a block
+      SYS.printProgressBar(i,SYS.get_nbl());
       SYS.step();
       SYS.measure();
       if(j%10 == 0){

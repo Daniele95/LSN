@@ -17,6 +17,8 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 
 using namespace std;
 
+void Normalization();
+
 int main()
 { 
   Input(); //Inizialization
@@ -139,9 +141,13 @@ void Input(void)
   Measure();
 
 //Print initial values for the potential energy and virial
-  cout << "Initial potential energy (with tail corrections) = " << walker[iv]/(double)npart + vtail << endl;
-  cout << "Virial                   (with tail corrections) = " << walker[iw]/(double)npart + ptail << endl;
-  cout << "Pressure                 (with tail corrections) = " << rho * temp + (walker[iw] + (double)npart * ptail) / vol << endl << endl;
+  cout << "Initial potential energy (with tail corrections) = " 
+  	<< walker[iv]/(double)npart + vtail << endl;
+  cout << "Virial                   (with tail corrections) = " 
+  	<< walker[iw]/(double)npart + ptail << endl;
+  cout << "Pressure                 (with tail corrections) = " 
+  	<< rho * temp + (walker[iw] + (double)npart * ptail) / vol 
+  	<< endl << endl;
 }
 
 
@@ -213,12 +219,20 @@ double Boltzmann(double xx, double yy, double zz, int ip)
   return 4.0*ene;
 }
 
+ // GOFR
+const int n_dist=100;
+double g[n_dist];
+double g_ave[n_dist];//
+
 void Measure()
 {
   int bin;
   double v = 0.0, w = 0.0;
   double vij, wij;
   double dx, dy, dz, dr;
+  
+  // GOFR
+  for (int i=0; i<n_dist; i++) { g[i]=0.; }//
 
 //reset the hystogram of g(r)
   for (int k=igofr; k<igofr+nbins; ++k) walker[k]=0.0;
@@ -249,6 +263,14 @@ void Measure()
        v += vij;
        w += wij;
      }
+     
+       // GOFR
+      //min_dist = box/2.0;
+      int i_bin = floor(2*n_dist*dr/box); //histo position
+      if(dr<box/2.){
+        g[ i_bin ] += 2;
+      }//
+     
     }          
   }
 
@@ -267,12 +289,26 @@ void Reset(int iblk) //Reset block averages
            glob_av[i] = 0;
            glob_av2[i] = 0;
        }
+       // GOFR
+      for(int i=0; i<n_dist; i++) //Reset radial function
+      {
+        g[i]=0;
+        g_ave[i]=0;
+      }//
    }
 
    for(int i=0; i<n_props; ++i)
    {
      blk_av[i] = 0;
    }
+   
+   // GOFR
+   for(int i=0; i<n_dist; i++) //Reset radial function
+   {
+     g[i]=0;
+     g_ave[i]=0;
+   }//
+   
    blk_norm = 0;
    attempted = 0;
    accepted = 0;
@@ -287,6 +323,9 @@ void Accumulate(void) //Update block averages
      blk_av[i] = blk_av[i] + walker[i];
    }
    blk_norm = blk_norm + 1.0;
+   //GOFR
+   for (int i=0; i<n_dist; i++) g_ave[i]=g_ave[i]+g[i];
+   //
 }
 
 
@@ -324,7 +363,9 @@ void Averages(int iblk) //Print results for current block
     glob_av2[iv] += stima_pot*stima_pot;
     err_pot=Error(glob_av[iv],glob_av2[iv],iblk);
     
-    stima_pres = rho * temp + (blk_av[iw]/blk_norm + ptail * (double)npart) / vol; //Pressure
+    stima_pres = rho * temp + (blk_av[iw]/blk_norm + ptail * (double)npart) / vol; 
+    
+    //Pressure
     glob_av[iw] += stima_pres;
     glob_av2[iw] += stima_pres*stima_pres;
     err_press=Error(glob_av[iw],glob_av2[iw],iblk);
@@ -348,17 +389,17 @@ void Averages(int iblk) //Print results for current block
     	<< stima_pres << setw(wd) << glob_av[iw]/(double)iblk 
     	<< setw(wd) << err_press << endl;
 //g(r)
-
+/*
     for (int k=igofr; k<igofr+nbins; ++k){
-        Gofr << setw(wd) << iblk << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)iblk << setw(wd) << err_gofr << endl;
+        Gofr << setw(wd) << iblk << setw(wd) 
+           << stima_gofr << setw(wd) << glob_av[k]/(double)iblk 
+           << setw(wd) << err_gofr << endl;
     }
-	
-	
-
-    //cout << "----------------------------" << endl << endl;
-
+	*/
     Epot.close();
     Pres.close();
+    
+    
     Gofr.close();
 }
 
@@ -367,18 +408,29 @@ void ConfFinal(void)
 {
   ofstream WriteConf,Gave;
 
-   const int wd=12;
+   const int wd=15;
   Gave.open(cartellaMadre+"output.gave.0",ios::app);
-    
+    /*
   for (int k=igofr; k<igofr+nbins; ++k){
-      Gave << setw(wd) << stima_gofr << setw(wd) << glob_av[k]/(double)nblk << setw(wd) << err_gofr << endl;
-  }
+      Gave << setw(wd) << stima_gofr << setw(wd) 
+      	<< glob_av[k]/(double)nblk 
+      	<< setw(wd) << err_gofr << endl;
+  }*/
+  
+   //Stampa medie di blocco. Le colonne rappresentano 
+   //distanze crescenti, le righe rappresentano i diversi blocchi
+   for(int i=0; i<n_dist; i++) Gave << g_ave[i] << "  ";
+      
+    Gave << endl;
+    Gave.close();
 
-  cout <<endl<< "Print final configuration to file config.final " << endl << endl;
+  cout <<endl<< "Print final configuration to file config.final " 
+  	<< endl << endl;
   WriteConf.open(cartellaMadre+"config.final");
   for (int i=0; i<npart; ++i)
   {
-    WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;
+    WriteConf << x[i]/box << "   " 
+    	<<  y[i]/box << "   " << z[i]/box << endl;
   }
   WriteConf.close();
 
@@ -393,7 +445,8 @@ void ConfXYZ(int nconf){ //Write configuration in .xyz format
   WriteXYZ << npart << endl;
   WriteXYZ << "This is only a comment!" << endl;
   for (int i=0; i<npart; ++i){
-    WriteXYZ << "LJ  " << Pbc(x[i]) << "   " <<  Pbc(y[i]) << "   " << Pbc(z[i]) << endl;
+    WriteXYZ << "LJ  " << Pbc(x[i]) << "   " 
+    	<<  Pbc(y[i]) << "   " << Pbc(z[i]) << endl;
   }
   WriteXYZ.close();
 }
@@ -408,6 +461,18 @@ double Error(double sum, double sum2, int iblk)
     if( iblk == 1 ) return 0.0;
     else return sqrt((sum2/(double)iblk - pow(sum/(double)iblk,2))/(double)(iblk-1));
 }
+
+void Normalization() //Normalizza la media a blocchi
+{
+    double Norm=0;          
+    for(int i=0; i<n_dist; i++) {  
+      double dr =  box/(2.*n_dist); 
+      double r = i*box/(2.*n_dist); 
+      Norm = rho*npart * 4.*M_PI/3.*( pow(r+dr,3)-pow(r,3) );
+      g_ave[i] = double(g_ave[i]/Norm/(double)blk_norm); 
+    }  
+}
+
 
 /****************************************************************
 *****************************************************************

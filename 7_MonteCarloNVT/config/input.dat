@@ -1,11 +1,11 @@
-0.8
+1.2
 108
-1.1
-2.2
+0.05
+5.0
 6.0
 50
-200
-distRadiale/
+2000
+argon/
 
   ReadInput >> temp;
   ReadInput >> npart;

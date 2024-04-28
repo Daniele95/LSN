@@ -17,7 +17,7 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 
 using namespace std;
 
-void Normalization();
+void Normalization(void);
 
 int main()
 { 
@@ -399,30 +399,33 @@ void Averages(int iblk) //Print results for current block
     Epot.close();
     Pres.close();
     
-    
     Gofr.close();
+    
+    // GOFR
+    Gave.open(cartellaMadre+"output.gave.0",ios::app);
+    Normalization();
+	    /*
+	  for (int k=igofr; k<igofr+nbins; ++k){
+	      Gave << setw(wd) << stima_gofr << setw(wd) 
+	      	<< glob_av[k]/(double)nblk 
+	      	<< setw(wd) << err_gofr << endl;
+	  }*/
+  
+   //Stampa medie di blocco. Le colonne rappresentano 
+   //distanze crescenti, le righe rappresentano i diversi blocchi
+    for(int i=0; i<n_dist; i++) Gave << g_ave[i] << "  ";
+      
+    Gave << endl;
+    Gave.close();
 }
 
 
 void ConfFinal(void)
 {
-  ofstream WriteConf,Gave;
+  ofstream WriteConf;
 
-   const int wd=15;
-  Gave.open(cartellaMadre+"output.gave.0",ios::app);
-    /*
-  for (int k=igofr; k<igofr+nbins; ++k){
-      Gave << setw(wd) << stima_gofr << setw(wd) 
-      	<< glob_av[k]/(double)nblk 
-      	<< setw(wd) << err_gofr << endl;
-  }*/
+   //const int wd=15;
   
-   //Stampa medie di blocco. Le colonne rappresentano 
-   //distanze crescenti, le righe rappresentano i diversi blocchi
-   for(int i=0; i<n_dist; i++) Gave << g_ave[i] << "  ";
-      
-    Gave << endl;
-    Gave.close();
 
   cout <<endl<< "Print final configuration to file config.final " 
   	<< endl << endl;

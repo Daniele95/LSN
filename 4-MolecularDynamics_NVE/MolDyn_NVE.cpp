@@ -23,7 +23,7 @@ int main(){
      if(istep%iprint == 0) cout << "Number of time-steps: " << istep << endl;
      if(istep%10 == 0){
         Measure();     //Properties measurement
-        ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
+       // ConfXYZ(nconf);//Write actual configuration in XYZ format //Commented to avoid "filesystem full"! 
         nconf += 1;
      }
   }
@@ -45,7 +45,7 @@ void Input(void){ //Prepare all stuff for the simulation
   seed = 1;    //Set seed for random numbers
   srand(seed); //Initialize random number generator
   
-  ReadInput.open("input.dat"); //Read input
+  ReadInput.open("configIniziale/input.dat"); //Read input
 
   ReadInput >> temp;
 
@@ -78,7 +78,7 @@ void Input(void){ //Prepare all stuff for the simulation
 
 //Read initial configuration
   cout << "Read initial configuration from file config.0 " << endl << endl;
-  ReadConf.open("config.0");
+  ReadConf.open("configIniziale/config.0");
   for (int i=0; i<npart; ++i){
     ReadConf >> x[i] >> y[i] >> z[i];
     x[i] = x[i] * box;
@@ -182,10 +182,10 @@ void Measure(){ //Properties measurement
   double dx, dy, dz, dr;
   ofstream Epot, Ekin, Etot, Temp;
 
-  Epot.open("output_epot.dat",ios::app);
-  Ekin.open("output_ekin.dat",ios::app);
-  Temp.open("output_temp.dat",ios::app);
-  Etot.open("output_etot.dat",ios::app);
+  Epot.open("risultati/output_epot.dat",ios::app);
+  Ekin.open("risultati/output_ekin.dat",ios::app);
+  Temp.open("risultati/output_temp.dat",ios::app);
+  Etot.open("risultati/output_etot.dat",ios::app);
 
   v = 0.0; //reset observables
   t = 0.0;
@@ -236,7 +236,7 @@ void ConfFinal(void){ //Write final configuration
   ofstream WriteConf;
 
   cout << "Print final configuration to file config.final " << endl << endl;
-  WriteConf.open("config.final");
+  WriteConf.open("risultati/config.final");
 
   for (int i=0; i<npart; ++i){
     WriteConf << x[i]/box << "   " <<  y[i]/box << "   " << z[i]/box << endl;

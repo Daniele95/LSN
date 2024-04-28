@@ -308,7 +308,7 @@ void Averages(int iblk) //Print results for current block
 {
    double r, gdir;
    ofstream Gofr, Gave, Epot, Pres;
-   const int wd=12;
+   const int wd=15;
    
     cout << "\r"<<fixed << setprecision(6)
     	<< accepted/attempted<<" " << flush;
@@ -340,9 +340,13 @@ void Averages(int iblk) //Print results for current block
     //// print out:
     
 //Potential energy per particle
-    Epot << setw(wd) << iblk <<  setw(wd) << stima_pot << setw(wd) << glob_av[iv]/(double)iblk << setw(wd) << err_pot << endl;
+    Epot << setw(wd) << iblk <<  setw(wd) 
+    	<< stima_pot << setw(wd) << glob_av[iv]/(double)iblk 
+    	<< setw(wd) << err_pot << endl;
 //Pressure
-    Pres << setw(wd) << iblk <<  setw(wd) << stima_pres << setw(wd) << glob_av[iw]/(double)iblk << setw(wd) << err_press << endl;
+    Pres << setw(wd) << iblk <<  setw(wd) 
+    	<< stima_pres << setw(wd) << glob_av[iw]/(double)iblk 
+    	<< setw(wd) << err_press << endl;
 //g(r)
 
     for (int k=igofr; k<igofr+nbins; ++k){

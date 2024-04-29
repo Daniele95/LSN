@@ -1,23 +1,17 @@
-/****************************************************************
-*****************************************************************
-    _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
-   _/_/  _/ _/       _/       Physics Department
-  _/  _/_/    _/    _/       Universita' degli Studi di Milano
- _/    _/       _/ _/       Prof. D.E. Galli
-_/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
-*****************************************************************
-*****************************************************************/
 
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <math.h>
 #include "../random/random.h"
+#include "../utils/utils.h"
 
 using namespace std;
 
 const int M = 100000;
 static float r[M];         
+
+Random rnd;
 
 void tiroCasuali() {
 
@@ -55,7 +49,7 @@ void tiroCasuali() {
 const int N = 100;
 const int L = int(M/N);             // suddivido i M numeri casuali
                                     // in N esperimenti contenenti
-                                    // ciascuno L numeri casuali
+                   // ciascuno L numeri casuali
 static float ave[N];                // ciascun esperimento ha come output
 static float av2[N];                // una media e una varianza
 
@@ -66,6 +60,104 @@ float integranda(float r_k, int esercizio)
    else return 0.;
 }
 
+void lorenziane() {
+
+   int Nrep = 1e5;
+   int dimension[] = {1, 2, 10, 100};
+   double Mean = 1.;
+
+   for(int l=0; l<4; l++) {
+
+      vector<double> S_N(Nrep);
+      for (int i=0; i<Nrep; i++) {
+         for (int j=0; j<dimension[l]; j++) {
+            S_N[i]+=rnd.Exp(Mean);
+         }
+         S_N[i]=S_N[i]/dimension[l];
+      }
+
+      string Index = to_string(dimension[l]);
+      ofstream outfileLCTexp("risultati/outfileLCTexp"+Index+".txt");
+      for (int i = 0; i < Nrep; ++i) {
+           outfileLCTexp << S_N[i] << endl;
+      }
+      outfileLCTexp.close();
+   }
+
+
+   double G = 1.;
+   for(int l=0; l<4; l++) {
+
+      vector<double> S_N(Nrep);
+      for (int i=0; i<Nrep; i++) {
+         for (int j=0; j<dimension[l]; j++) {
+            S_N[i]+=rnd.Lor(G);
+         }
+         S_N[i]=S_N[i]/dimension[l];
+      }
+
+      string Index = to_string(dimension[l]);
+      ofstream outfileLCTlor("risultati/outfileLCTlor"+Index+".txt");
+      for (int i = 0; i < Nrep; ++i) {
+           outfileLCTlor << S_N[i] << endl;
+      }
+      outfileLCTlor.close();
+   }
+
+   double Length = 1.;
+   double d = 2.;
+   int M_campionamenti = 1e5;         //Total number of throws
+   int N_blocchi = 1e2;         // Number of blocks
+   int L_step = M_campionamenti/N_blocchi; 
+
+   vector<double> b(M_campionamenti);
+   for (int i = 0; i < M_campionamenti; i++) 
+        b[i] = 1.*d*rnd.Rannyu(); 
+       // U[0,1) uniform distribution
+   
+
+   vector<double> l(M_campionamenti);
+
+   for (int i = 0; i < M_campionamenti; i++) 
+      l[i] = Length*sin(2.*rnd.UnPhiAR());
+   
+
+   vector<double> ave_(N_blocchi);
+   vector<double> av2_(N_blocchi);
+   vector<double> sum_prog_(N_blocchi); //nuovi vettori
+   vector<double> su2_prog_(N_blocchi);
+   vector<double> err_prog_(N_blocchi);
+
+    for (int i = 0; i < N_blocchi; i++) {
+        int Nhit = 0;
+        for (int j = 0; j < L_step; j++) {
+            int k = j + i * L_step;
+            if ( b[k]+l[k] < 0. || b[k]+l[k] > d ) {
+                Nhit++;
+            }
+        }
+        ave_[i] = 2.0 * Length * L_step / (d * Nhit); 
+        // calculation of pi for the i-th block
+        av2_[i] = pow(ave_[i], 2); // (r_i)^2
+    }
+
+   for (int i = 0; i < N_blocchi; i++) {
+        for (int j = 0; j <= i; j++) {
+            sum_prog_[i] += ave_[j];
+            su2_prog_[i] += av2_[j];
+        }
+        sum_prog_[i] /=(i+1);
+        su2_prog_[i] /=(i+1);
+        err_prog_[i] = error(sum_prog_, su2_prog_, i);
+    }
+
+    ofstream outfile13("risultati/outfile13.txt");
+    for (int i = 0; i < N_blocchi; ++i) {
+        outfile13 << sum_prog_[i] << "\t" << err_prog_[i] << endl;
+
+    }
+    outfile13.close();
+}
 
 void esperimenti( int esercizio )
 {
@@ -148,17 +240,20 @@ void chiSquareTest()
 }
 
 
-int main (int argc, char *argv[]){
-
+int main (int argc, char *argv[])
+{
    int esercizio = 1;
-
    tiroCasuali();            // tiro M casuali
+
+   rnd.SetSeed();   
+   int seed=23; 
+   rnd.SetPrimesCouple(seed);
 
    esperimenti( esercizio );         // riempio gli array  
    analisiDati();
   
-   write(sum_prog, N, "rMedia.txt");
-   write(err_prog, N, "rErrore.txt");
+   write(sum_prog, N, "risultati/rMedia.txt");
+   write(err_prog, N, "risultati/rErrore.txt");
    
    
    for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
@@ -185,15 +280,8 @@ int main (int argc, char *argv[]){
       sumChiSquare += chiSquare[j];      
    cout << sumChiSquare << endl;
    
+   lorenziane();
+   
    return 0;
 }
 
-/****************************************************************
-*****************************************************************
-    _/    _/  _/_/_/  _/       Numerical Simulation Laboratory
-   _/_/  _/ _/       _/       Physics Department
-  _/  _/_/    _/    _/       Universita' degli Studi di Milano
- _/    _/       _/ _/       Prof. D.E. Galli
-_/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
-*****************************************************************
-*****************************************************************/

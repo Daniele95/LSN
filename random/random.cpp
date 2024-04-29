@@ -60,6 +60,31 @@ vec Random :: Rannyu(vec mean, double passo) {
    return rand;
 }
 
+
+double Random :: Exp(double mean) {
+   // This function generates a random number from an Expontential distribution with given mean
+   double s=Rannyu();
+   return -1./mean*log(1.-s);
+}
+
+double Random :: Lor(double G) {
+   // This function generates a random number from an Expontential distribution with given mean
+   double s=Rannyu();
+   return G*tan(M_PI*(s-1./2.));
+}
+
+double Random :: UnPhiAR() {
+   //Thi function generates a uniform number between 0 and PI without using Pi
+   double x;
+   double y;
+   do {
+      x = Rannyu()*2.-1.;
+      y = Rannyu();
+   } while ( x*x+y*y > 1. );
+
+  return acos(x/sqrt(x*x+y*y));
+}
+
 double Random :: Rannyu(void){
   // This function generates a random number in the range [0,1)
   const double twom12=0.000244140625;

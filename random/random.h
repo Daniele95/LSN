@@ -41,6 +41,9 @@ public:
   // Method to generate a random number with a Gaussian distribution
   double Gauss(double mean, double sigma);
   vec Gauss(vec mean, double sigma);
+  double Exp(double mean);
+  double Lor(double G) ;
+  double UnPhiAR();
 };
 
 #endif // __Random__

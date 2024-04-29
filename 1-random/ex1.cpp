@@ -12,7 +12,7 @@ _/    _/  _/_/_/  _/_/_/_/ email: Davide.Galli@unimi.it
 #include <fstream>
 #include <string>
 #include <math.h>
-#include "../genRandom/random.h"
+#include "../random/random.h"
 
 using namespace std;
 
@@ -24,13 +24,13 @@ void tiroCasuali() {
    Random rnd;
    int seed[4];
    int p1, p2;
-   ifstream Primes("../genRandom/Primes");
+   ifstream Primes("../random/Primes");
    if (Primes.is_open()){
       Primes >> p1 >> p2 ;
    } else cerr << "PROBLEM: Unable to open Primes" << endl;
    Primes.close();
 
-   ifstream input("../genRandom/seed.in");
+   ifstream input("../random/seed.in");
    string property;
    if (input.is_open()){
       while ( !input.eof() ){
@@ -48,7 +48,7 @@ void tiroCasuali() {
    for(int i=0; i<M; i++)
       r[i] = rnd.Rannyu();
 
-   rnd.SaveSeed();
+   //rnd.SaveSeed();
    
 }
 
@@ -174,12 +174,12 @@ int main (int argc, char *argv[]){
    esperimenti( esercizio );         
    analisiDati();
   
-   write(sum_prog, N, "sigmaMedia.txt");
-   write(err_prog, N, "sigmaErrore.txt");   
+   write(sum_prog, N, "risultati/sigmaMedia.txt");
+   write(err_prog, N, "risultati/sigmaErrore.txt");   
    
    
    chiSquareTest();
-   write(chiSquare, N, "chiQuadro.txt");
+   write(chiSquare, N, "risultati/chiQuadro.txt");
    int sumChiSquare = 0;
    for ( int j = 0; j < N; j++ )
       sumChiSquare += chiSquare[j];      

@@ -127,6 +127,8 @@ int System :: pbc(int i){ // Enforce periodic boundary conditions for spins
   return i;
 } 
 
+double side;
+
 void System :: initialize(){ // Initialize the System object according to the content of the input files in the ../INPUT/ directory
 
   int p1, p2; // Read from ../INPUT/Primes a pair of numbers to be used to initialize the RNG
@@ -185,7 +187,7 @@ void System :: initialize(){ // Initialize the System object according to the co
       _volume = _npart/_rho;
       _side.resize(_ndim);
       _halfside.resize(_ndim);
-      double side = pow(_volume, 1.0/3.0);
+       side = pow(_volume, 1.0/3.0);
       for(int i=0; i<_ndim; i++) _side(i) = side;
       _halfside=0.5*_side;
       coutf << "SIDE= ";
@@ -498,20 +500,71 @@ void System :: read_configuration(){
   return;
 }
 
+
+ // proprietà GOFR
+double stima_gofr, err_gofr;
+const int n_dist=100;
+double g[n_dist];
+double g_ave[n_dist];//
+int igofr,nbins;
+const int m_props=1000;
+//double walker[m_props]; no: è rimpiazzato da _measurement
+
+void System :: Normalization(void) //Normalizza la media a blocchi
+{
+    double Norm=0;          
+    for(int i=0; i<n_dist; i++) {  
+      double dr =  side/(2.*n_dist); 
+      double r = i*side/(2.*n_dist); 
+      Norm = this->_rho*this->_npart * 
+      	4.*M_PI/3.*( pow(r+dr,3)-pow(r,3) );
+      //g_ave[i] = double(g_ave[i]/Norm/(double)blk_norm); 
+      g_ave[i] = double(g_ave[i]/Norm/(double)_nsteps);
+    }  
+}
 void System :: block_reset(int blk){ // Reset block accumulators to zero
   ofstream coutf;
   if(blk>0){
     coutf.open("../OUTPUT/output.dat",ios::app);
     coutf << "Block completed: " << blk << endl;
     coutf.close();
+    
+       // GOFR
+      for(int i=0; i<n_dist; i++) //Reset radial function
+      {
+        g[i]=0;
+        g_ave[i]=0;
+      }//
+    
   }
+  
+       // GOFR
+      for(int i=0; i<n_dist; i++) //Reset radial function
+      {
+        g[i]=0;
+        g_ave[i]=0;
+      }//
+  
   _block_av.zeros();
   return;
 }
 
 void System :: measure(){ // Measure properties
   _measurement.zeros();
-  // POTENTIAL ENERGY, VIRIAL, GOFR ///////////////////////////////////////////
+  
+  //GOFR ://measurement of g(r)
+  igofr = 2;
+ // nbins = 100;
+ // n_props = n_props + nbins;
+  _bin_size = (side/1.0)/(double)nbins;
+  for (int i=0; i<n_dist; i++) { g[i]=0.; }//
+//reset the hystogram of g(r)
+  for (int k=_index_gofr; k<_index_gofr+nbins; ++k) 
+     _measurement[k]=0.0;
+  
+  
+  
+  // POTENTIAL ENERGY, VIRIAL  
   int bin;
   vec distance;
   distance.resize(_ndim);
@@ -530,11 +583,17 @@ void System :: measure(){ // Measure properties
         distance(2) = this->pbc( _particle(i).getposition(2,true) -
         	 _particle(j).getposition(2,true), 2);
         dr = sqrt( dot(distance,distance) );
-        // GOFR ... TO BE FIXED IN EXERCISE 7
+        
+        // GOFR for  EXERCISE 7
+        //min_dist = box/2.0;
+	int i_bin = floor(2*n_dist*dr/side); //histo position
+        if(dr<side/2.)  g[ i_bin ] += 2;
+	 //
+        
         if(dr < _r_cut){
           if(_measure_penergy)  
             penergy_temp +=1.0/pow(dr,12) - 1.0/pow(dr,6); // POTENTIAL ENERGY
-            // PRESSURE for EXERCISE 4:
+            // PRESSURE for EXERCISE 4
             virial += 48 * (1.0/pow(dr,12) - 0.5*1.0/pow(dr,6) );
         }
       }
@@ -581,6 +640,11 @@ void System :: measure(){ // Measure properties
 // TO BE FIXED IN EXERCISE 6
 
   _block_av += _measurement; //Update block accumulators
+
+
+   //update GOFR
+   for (int i=0; i<n_dist; i++) g_ave[i]=g_ave[i]+g[i];
+   //
 
   return;
 }
@@ -656,6 +720,25 @@ void System :: averages(int blk){
   }
   // GOFR //////////////////////////////////////////////////////////////////////
   // TO BE FIXED IN EXERCISE 7
+  if (_measure_gofr){
+  
+      // g(r) density function
+    for (int k=_index_gofr; k<_index_gofr+nbins; ++k)
+    {
+        // stima_gofr =  _block_av[k]/blk_norm;
+         stima_gofr =  _block_av[k]/ double(_nsteps);
+         _global_av[k] += stima_gofr;
+         _global_av2[k] += stima_gofr*stima_gofr;
+         err_gofr = this->
+         	error(_global_av[k], _global_av2[k], blk);     
+    }
+    
+    coutf.open("../OUTPUT/gofr.dat",ios::app);
+    Normalization();
+    for(int i=0; i<n_dist; i++) coutf << g_ave[i] << "  ";
+    coutf << endl;
+    coutf.close();
+  }
   // MAGNETIZATION /////////////////////////////////////////////////////////////
   // TO BE FIXED IN EXERCISE 6
   // SPECIFIC HEAT /////////////////////////////////////////////////////////////

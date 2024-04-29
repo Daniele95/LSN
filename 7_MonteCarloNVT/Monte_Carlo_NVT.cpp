@@ -224,6 +224,7 @@ const int n_dist=100;
 double g[n_dist];
 double g_ave[n_dist];//
 
+
 void Measure()
 {
   int bin;

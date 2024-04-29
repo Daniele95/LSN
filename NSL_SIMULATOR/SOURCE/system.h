@@ -86,6 +86,7 @@ public: // Function declarations
   double Force(int i, int dim); // Calculate force on a particle along a dimension
   double Boltzmann(int i, bool xnew); // Calculate Boltzmann factor for Metropolis acceptance
   void printProgressBar(int , int );
+  void Normalization(void);
 };
 
 #endif // __System__

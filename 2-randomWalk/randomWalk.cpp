@@ -185,7 +185,9 @@ void integraleMontecarlo(){
    vec Sum2Av(NBlocks,arma::fill::zeros);
 
   //Media a blocchi e incertezze
-   mat Average(NSteps, NBlocks); //matrice 1e2x1e2. Le righe indicizzano il passo, le colonne la media sui blocchi del RW
+   mat Average(NSteps, NBlocks); 
+   //matrice 1e2x1e2. Le righe indicizzano il passo, 
+   //le colonne la media sui blocchi del RW
    mat Average2(NSteps, NBlocks);
 
    
@@ -234,7 +236,7 @@ void integraleMontecarlo2()
 
    mediaBlocchi(r, sum_prog, err_prog, N, L); //media a blocchi e incertezze
 
-    ofstream outfile211("output/outfile211.txt");
+    ofstream outfile211("risultati/outfile211.txt");
     for (int i = 0; i < N; ++i) 
        outfile211 << sum_prog(i) << "\t" << err_prog(i) << endl;
     outfile211.close();
@@ -249,7 +251,6 @@ void integraleMontecarlo2()
 
    mat RWC(3, NRW, arma::fill::zeros);   //Versione continua
    mat Dist_RadC(NSteps,  NRW, arma::fill::zeros); //Versione continua
-
    //Calcolo le distanze al quadrato per ogni passo per ogni RW
    for (int l = 0; l < NSteps ; l++) { //ciclo su tutti i passi dei RW
       for (int i = 0; i < NRW; i++) { //ciclo su tutti i 1e4 RW
@@ -274,13 +275,16 @@ void integraleMontecarlo2()
          double sum1 = 0.0;
          for (int j = 0; j < L; j++) {
             int k = j + i * L;
+            //cout <<l<<" "<<k<<endl;
+            if(k<1e4)
             sum1 += Dist_RadC(l,k);
          }
-         Average(l,i) = sum1 / L; //media sull'i-esimo blocco all'l-esimo passo
-         Average2(l,i) = pow(Average(l,i), 2);
+         //Average(l,i) = sum1 / L; //media sull'i-esimo blocco all'l-esimo passo
+         //Average2(l,i) = pow(Average(l,i), 2);
       }
    }
 
+/*
    for (int l = 0; l < NSteps; l++) {
       for (int i = 0; i <= NBlocks; i++) {
          SumAv(l) += Average(l,i);
@@ -292,17 +296,19 @@ void integraleMontecarlo2()
     }                     
 
     //Stampa
-    ofstream outfile222("output/outfile222.txt");
+    ofstream outfile222("risultati/outfile222.txt");
     for (int l = 0; l < NSteps; ++l) 
        outfile222 << sqrt( SumAv(l) ) << "\t" << ErrAv(l)/(2*sqrt(SumAv(l))) << endl;
 
     outfile222.close();
     mediaBlocchi(s, sum_prog, err_prog, N, L);  //media a blocchi e incertezze
 
-    ofstream outfile212("output/outfile212.txt");
+    ofstream outfile212("risultati/outfile212.txt");
     for (int i = 0; i < N; ++i) 
        outfile212 << sum_prog(i) << "\t" << err_prog(i) << endl;
     outfile212.close();
+    
+    */
 } 
  
 
@@ -347,7 +353,7 @@ void randomWalkDiscreto()
     }                     
 
     //Stampa
-    ofstream outfile221("output/outfile221.txt");
+    ofstream outfile221("risultati/outfile221.txt");
     for (int l = 0; l < NSteps; ++l) 
        outfile221 << sqrt( SumAv(l) ) << "\t" << ErrAv(l)/(2*sqrt(SumAv(l))) << endl;
     outfile221.close();
@@ -401,7 +407,7 @@ void randomWalkContinuo()
     }                     
 
     //Stampa
-    ofstream outfile222("output/outfile222.txt");
+    ofstream outfile222("risultati/outfile222.txt");
     for (int l = 0; l < NSteps; ++l) 
        outfile222 << sqrt( SumAv(l) ) << "\t" << ErrAv(l)/(2*sqrt(SumAv(l))) << endl;
     outfile222.close();
@@ -416,6 +422,10 @@ int main (int argc, char *argv[]){
    
    write(medie, N, "risultati/rMedia.txt");
    write(deviazioni, N, "risultati/rErrore.txt");
+   
+   integraleMontecarlo2();
+  // randomWalkDiscreto();
+   //randomWalkContinuo();
    
    
    return 0;

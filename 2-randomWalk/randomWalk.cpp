@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -7,7 +6,6 @@
 #include <cmath>
 #include "../random/random.h"
 #include "../utils/utils.h"
-
 
 using namespace std;
 
@@ -48,7 +46,6 @@ float tiroCasuali() {
 
    ////////////////////////////////
 
-
    float d = 1.2; // spaziatura linee
    float l = 1.; // lunghezza ago
 
@@ -56,7 +53,6 @@ float tiroCasuali() {
 
    int tiri = 0;
    int intersezioni = 0;
-   
    
    for(int i=0; i<N_blocchi; i++)
    {
@@ -107,7 +103,6 @@ float tiroCasuali() {
    
 }
 
-
 void write (float* array, int arrayLength, string nomeFile)
 {
    std::ofstream ofile;
@@ -118,9 +113,6 @@ void write (float* array, int arrayLength, string nomeFile)
 
    ofile.close();   
 }
-
-
-
 
 
 //------------- INTEGRAZIONE MONTE CARLO
@@ -137,8 +129,6 @@ double p(double x) {
 double T(double x) { 
 	return rnd.Rannyu() * delta - delta/2.; 
 } 
-
-
 
 void integraleMontecarlo(){ 
 
@@ -170,36 +160,22 @@ void integraleMontecarlo(){
 	cout << "rate accettazione: " << double(accepted)/double(attempted) << endl; 
 
 }
-
-
-
-//-------------RANDOM WALK
-
-   
-
-//funzione integranda
+ 
 double Integrand(double x) {
    return M_PI/2.*cos(M_PI/2.*x);
 }
-
-//
 double Function(double x) {
    return M_PI*cos(M_PI*1./2.*x)/(4.*(1.-x));
 }
-
 //Funzione peso per importance sampling
 double Prob(double x) {
    return 2.*(1.-x);
 }
-
 //Generatore di numeri distribuiti come la funzione Prob
 double LinGen(double x) {
    return 1-sqrt(1-x);
 }
 
-void InitializeRand(Random& rnd); //Implementata sotto
-
- 
 void integraleMontecarlo2()
 {
 
@@ -215,10 +191,6 @@ void integraleMontecarlo2()
       r(i) = Integrand(x(i)); // U[0,1) uniform distribution
    }
 
-   //tengo salvati nel main solo i vettori 
-   //costd::ntenenti i dati che poi verranno 
-   //salvati su file. Gli altri creati e 
-   //distrutti all'interno della funzione MeanAndErr	
    vec sum_prog(N,arma::fill::zeros);
    vec err_prog(N,arma::fill::zeros);
 
@@ -243,11 +215,10 @@ void integraleMontecarlo2()
     for (int i = 0; i < N; ++i) 
        outfile212 << sum_prog(i) << "\t" << err_prog(i) << endl;
     outfile212.close();
-
-    
 } 
 
 
+//-------------RANDOM WALK
 
 
 void randomWalkDiscreto()
@@ -384,9 +355,7 @@ void randomWalkContinuo()
 
 }
 
-
 int main (int argc, char *argv[]){
-
 
    rnd.SetSeed();   
    int seed=23; 
@@ -399,8 +368,6 @@ int main (int argc, char *argv[]){
    integraleMontecarlo2();
    randomWalkDiscreto();
    randomWalkContinuo();
-   
-   
    return 0;
 }
 

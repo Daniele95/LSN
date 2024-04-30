@@ -12,40 +12,6 @@ Random rnd;
 const int M = 100000;
  float r[M];         
 
-
-void tiroCasuali() {
-
-   Random rnd;
-   int seed[4];
-   int p1, p2;
-   ifstream Primes("../random/Primes");
-   if (Primes.is_open()){
-      Primes >> p1 >> p2 ;
-   } else cerr << "PROBLEM: Unable to open Primes" << endl;
-   Primes.close();
-
-   ifstream input("../random/seed.in");
-   string property;
-   if (input.is_open()){
-      while ( !input.eof() ){
-         input >> property;
-         if( property == "RANDOMSEED" ){
-            input >> seed[0] >> seed[1] >> seed[2] >> seed[3];
-            rnd.SetRandom(seed,p1,p2);
-         }
-      }
-      input.close();
-   } else cerr << "PROBLEM: Unable to open seed.in" << endl;
-
-                                    // genero M numeri 
-                                    // con una distribuzione uniforme tra 0 e 1
-   for(int i=0; i<M; i++)
-      r[i] = rnd.Rannyu();
-
-   //rnd.SaveSeed();
-   
-}
-
 float integranda(float r_k, int esercizio)
 {
    if ( esercizio == 1 ) return r_k;
@@ -63,21 +29,17 @@ float err_prog[Niniziale];           // su tutti gli esperimenti passati
 	
 void esperimenti( int N, int L, int esercizio )
 {
-   
    for (int i = 0; i < N; i ++)     // in ciascun esperimento
    {
       float sum = 0;
-      
       for (int j = 0; j < L; j ++)  // calcolo l'integrale
       {                             // su un gruppo di L numeri casuali
          int k = j + i * L;
          sum += integranda( r[k], esercizio );
       }
-      
       ave[i] = sum / L;
       av2[i] = pow((ave[i]),2);
    }
-   
 }
 
 void analisiDati()
@@ -97,7 +59,6 @@ void analisiDati()
 
 // N = 100, L = 1000
 float chiSquare[Niniziale];
-
 void chiSquareTest()
 {
    for ( int i = 0; i < Niniziale; i++ )
@@ -119,24 +80,16 @@ void chiSquareTest()
 
 void calcolaIntegrale()
 {
-	 int N = Niniziale;
-	 int L = Liniziale;             // suddivido i M numeri casuali
-		                            // in N esperimenti contenenti
-		           // ciascuno L numeri casuali
-
+   int N = Niniziale;
+   int L = Liniziale;  // suddivido i M numeri casuali
+   // in N esperimenti contenenti
+   // ciascuno L numeri casuali
    int esercizio = 1;
-   tiroCasuali();            // tiro M casuali
-
-   rnd.SetSeed();   
-   int seed=23; 
-   rnd.SetPrimesCouple(seed);
-
+   for(int i=0; i<M; i++) r[i] = rnd.Rannyu();
    esperimenti(N,L, esercizio );         // riempio gli array  
    analisiDati();
-  
    write(sum_prog, N, "risultati/rMedia.txt");
    write(err_prog, N, "risultati/rErrore.txt");
-   
    for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
    {
       ave[i] = 0.;
@@ -145,14 +98,11 @@ void calcolaIntegrale()
       su2_prog[i] = 0.;
       err_prog[i] = 0.;
    }
-   
    esercizio = 2;
    esperimenti(N,L, esercizio );         
    analisiDati();
-  
    write(sum_prog, N, "risultati/sigmaMedia.txt");
    write(err_prog, N, "risultati/sigmaErrore.txt");   
-   
    chiSquareTest();
    write(chiSquare, N, "risultati/chiQuadro.txt");
    int sumChiSquare = 0;
@@ -166,9 +116,8 @@ void lorenziane()
    int Nrep = 1e5;
    ivec dimension = {1, 2, 10, 100};
    double Mean = 1.;
-
-   for(int l=0; l<4; l++) {
-
+   for(int l=0; l<4; l++) 
+   {
       vec S_N(Nrep);
       for (int i=0; i<Nrep; i++) { 
          for (int j=0; j<dimension(l); j++) {
@@ -183,10 +132,9 @@ void lorenziane()
       }
       outfileLCTexp.close();
    }
-
    double G = 1.;
-   for(int l=0; l<4; l++) {
-
+   for(int l=0; l<4; l++) 
+   {
       vec S_N(Nrep);
       for (int i=0; i<Nrep; i++) {
          for (int j=0; j<dimension(l); j++) {
@@ -203,54 +151,36 @@ void lorenziane()
    }
 }
 
-
 float buffon() {
-
- int M_campionamenti = 100000;
- int N_blocchi = 100;
- int L_stepblocco = int(M_campionamenti/N_blocchi);
-
-vec dati(N_blocchi);
-vec medie(N_blocchi);
-vec deviazioni(N_blocchi);
-
-
-
+   int M_campionamenti = 100000;
+   int N_blocchi = 100;
+   int L_stepblocco = int(M_campionamenti/N_blocchi);
+   vec dati(N_blocchi);
+   vec medie(N_blocchi);
+   vec deviazioni(N_blocchi);
    float d = 1.2; // spaziatura linee
    float l = 1.; // lunghezza ago
-
    float o=0.,x=0.,y=0.,r=0.,puntaAgo=0.;
-
    int tiri = 0;
-   
-   
    for(int i=0; i<N_blocchi; i++)
    {
-      
       while (tiri<L_stepblocco)
       {
          o = rnd.Rannyu()*d;
          // punto in un quadrato di raggio 2L
          x = (2.*rnd.Rannyu()-1.)*l;
          y = (2.*rnd.Rannyu()-1.)*l;
-         
          r = sqrt(pow(x,2)+pow(y,2));
-         
          puntaAgo = o+(x/r)*l;
-         
          if( r<l )
          {
             tiri++;
             if (puntaAgo<0. || puntaAgo>d)
                dati(i) ++;               
          }
-      
       }
-      
       dati(i)  /= float(L_stepblocco);
-      
       if(i==0) medie[i] = dati(i);
-      
       for (int j=0; j<i; j++) {
          medie(i) += dati(j);
          if(i>0) deviazioni(i) += pow(dati(j),2);
@@ -260,36 +190,23 @@ vec deviazioni(N_blocchi);
          deviazioni(i) = deviazioni(i)/float(i) - pow(medie(i),2);
          deviazioni(i) = sqrt(deviazioni(i) / float( i));
       }
-      
-      
       tiri = 0.;
    }
-   
    cout << medie[89]<<endl;
    cout <<deviazioni[89]<<endl;
    float P = medie[99];
-   //rnd.SaveSeed();
-   
    writeMeanError(medie, deviazioni, "risultati/buffon.txt");
    return (2.*l)/(P*d) ;
-   
 }
 
 int main (int argc, char *argv[])
 {
-   
-   
    rnd.SetSeed();   
    int seed=23; 
    rnd.SetPrimesCouple(seed);
    calcolaIntegrale();
    lorenziane();
-   
-   
    cout << buffon() << endl;
-   
-   
-   
    return 0;
 }
 

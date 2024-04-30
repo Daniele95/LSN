@@ -79,6 +79,13 @@ void randomWalk(bool continuo)
    // da tutti i cammini a un certo istante:
    mat posizioniCasuali(3, numCammini, arma::fill::zeros);   
    
+   std::ofstream filePosizioni;
+   string nomeFilePos = "risultati/camminoDiscretoPos.txt";
+   if(continuo) nomeFilePos = "risultati/camminoContinuoPos.txt";
+   filePosizioni.open(nomeFilePos);
+   filePosizioni.close();
+   filePosizioni.open(nomeFilePos,ios::app);
+   
    for (int l = 0; l < NSteps ; l++) 
    {
       for (int i = 0; i < numCammini; i++) 
@@ -101,7 +108,11 @@ void randomWalk(bool continuo)
          	pow(posizioniCasuali(1,i),2)+
          	pow(posizioniCasuali(2,i),2);
       }
+      filePosizioni<<posizioniCasuali(0,0)<<"\t"
+      <<posizioniCasuali(1,0)<<"\t"
+      <<posizioniCasuali(2,0)<<"\t"<<endl;
    }
+   filePosizioni.close();
    string risultati= "risultati/camminoDiscreto.txt"; 
    if(continuo) risultati= "risultati/camminoContinuo.txt"; 
    mediaBlocchiCammino(risultati);

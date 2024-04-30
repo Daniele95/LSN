@@ -60,26 +60,25 @@ float integranda(float r_k, int esercizio)
    else return 0.;
 }
 
-void lorenziane() {
-
+void lorenziane() 
+{
    int Nrep = 1e5;
-   int dimension[] = {1, 2, 10, 100};
+   ivec dimension = {1, 2, 10, 100};
    double Mean = 1.;
 
    for(int l=0; l<4; l++) {
 
-      vector<double> S_N(Nrep);
-      for (int i=0; i<Nrep; i++) {
-         for (int j=0; j<dimension[l]; j++) {
-            S_N[i]+=rnd.Exp(Mean);
+      vec S_N(Nrep);
+      for (int i=0; i<Nrep; i++) { 
+         for (int j=0; j<dimension(l); j++) {
+            S_N(i)+=rnd.Exp(Mean);
          }
-         S_N[i]=S_N[i]/dimension[l];
+         S_N(i)=S_N(i)/dimension(l);
       }
-
       string Index = to_string(dimension[l]);
       ofstream outfileLCTexp("risultati/outfileLCTexp"+Index+".txt");
       for (int i = 0; i < Nrep; ++i) {
-           outfileLCTexp << S_N[i] << endl;
+           outfileLCTexp << S_N(i) << endl;
       }
       outfileLCTexp.close();
    }
@@ -87,18 +86,17 @@ void lorenziane() {
    double G = 1.;
    for(int l=0; l<4; l++) {
 
-      vector<double> S_N(Nrep);
+      vec S_N(Nrep);
       for (int i=0; i<Nrep; i++) {
-         for (int j=0; j<dimension[l]; j++) {
-            S_N[i]+=rnd.Lor(G);
+         for (int j=0; j<dimension(l); j++) {
+            S_N(i)+=rnd.Lor(G);
          }
-         S_N[i]=S_N[i]/dimension[l];
+         S_N(i)=S_N(i)/dimension(l);
       }
-
       string Index = to_string(dimension[l]);
       ofstream outfileLCTlor("risultati/outfileLCTlor"+Index+".txt");
       for (int i = 0; i < Nrep; ++i) {
-           outfileLCTlor << S_N[i] << endl;
+           outfileLCTlor << S_N(i) << endl;
       }
       outfileLCTlor.close();
    }
@@ -106,61 +104,56 @@ void lorenziane() {
 
 void piGreco()
 {
-
    double Length = 1.;
    double d = 2.;
-   int M_campionamenti = 1e5;         //Total number of throws
-   int N_blocchi = 1e2;         // Number of blocks
+   int M_campionamenti = 1e5;
+   int N_blocchi = 1e2;
    int L_step = M_campionamenti/N_blocchi; 
 
-   vector<double> b(M_campionamenti);
+   vec b(M_campionamenti);
    for (int i = 0; i < M_campionamenti; i++) 
-        b[i] = 1.*d*rnd.Rannyu(); 
-       // U[0,1) uniform distribution
+        b(i) = 1.*d*rnd.Rannyu(); 
 
-   vector<double> l(M_campionamenti);
-
+   vec l(M_campionamenti);
    for (int i = 0; i < M_campionamenti; i++) 
-      l[i] = Length*sin(2.*rnd.UnPhiAR());
+      l(i) = Length*sin(2.*rnd.UnPhiAR());
 
-   vector<double> ave_(N_blocchi);
-   vector<double> av2_(N_blocchi);
-   vector<double> sum_prog_(N_blocchi); //nuovi vettori
-   vector<double> su2_prog_(N_blocchi);
-   vector<double> err_prog_(N_blocchi);
+   vec ave_(N_blocchi);
+   vec av2_(N_blocchi);
+   vec sum_prog_(N_blocchi); //nuovi vettori
+   vec su2_prog_(N_blocchi);
+   vec err_prog_(N_blocchi);
 
     for (int i = 0; i < N_blocchi; i++) {
         int Nhit = 0;
         for (int j = 0; j < L_step; j++) {
             int k = j + i * L_step;
-            if ( b[k]+l[k] < 0. || b[k]+l[k] > d ) {
+            if ( b(k)+l(k) < 0. || b(k)+l(k) > d ) 
                 Nhit++;
-            }
         }
-        ave_[i] = 2.0 * Length * L_step / (d * Nhit); 
+        ave_(i) = 2.0 * Length * L_step / (d * Nhit); 
         // calculation of pi for the i-th block
-        av2_[i] = pow(ave_[i], 2); // (r_i)^2
+        av2_(i) = pow(ave_(i), 2);
     }
 
    for (int i = 0; i < N_blocchi; i++) {
         for (int j = 0; j <= i; j++) {
-            sum_prog_[i] += ave_[j];
-            su2_prog_[i] += av2_[j];
+            sum_prog_(i) += ave_(j);
+            su2_prog_(i) += av2_(j);
         }
-        sum_prog_[i] /=(i+1);
-        su2_prog_[i] /=(i+1);
-        err_prog_[i] = error(sum_prog_, su2_prog_, i);
+        sum_prog_(i) /=(i+1);
+        su2_prog_(i) /=(i+1);
+        err_prog_(i) = error(sum_prog_, su2_prog_, i);
     }
 
     ofstream outfile13("risultati/outfile13.txt");
     int intero=0;
     for (int i = 0; i < N_blocchi; ++i) {
-        outfile13 << sum_prog_[i] << "\t" << err_prog_[i] << endl;
+        outfile13 << sum_prog_(i) << "\t" << err_prog_(i) << endl;
         intero=i;
         }
-    cout << "pigreco = "<<sum_prog_[intero] 
-    	<< ", con errore = "<<err_prog_[intero]<<endl;
-    
+    cout << "pigreco = "<<sum_prog_(intero) 
+    	<< ", con errore = "<<err_prog_(intero)<<endl;
     outfile13.close();
 }
 
@@ -183,13 +176,11 @@ void esperimenti( int esercizio )
    
 }
 
-
 float error( float* AV, float* AV2, int n )
 {
    if ( n == 0 ) return 0.;
    else return sqrt(  ( AV2[ n ] - pow( AV[ n ], 2) ) / n );
 }
-
 
 static float sum_prog[N];           // analisi dati: ogni nuovo esperimento
 static float su2_prog[N];           // calcolo media e deviazione standard
@@ -220,8 +211,6 @@ void write (float* array, int arrayLength, string nomeFile)
 
    ofile.close();   
 }
-
-   
 // N = 100, L = 1000
 static float chiSquare[N];
 
@@ -243,8 +232,6 @@ void chiSquareTest()
       
    }
 }
-
-
 int main (int argc, char *argv[])
 {
    int esercizio = 1;
@@ -259,7 +246,6 @@ int main (int argc, char *argv[])
   
    write(sum_prog, N, "risultati/rMedia.txt");
    write(err_prog, N, "risultati/rErrore.txt");
-   
    
    for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
    {
@@ -276,7 +262,6 @@ int main (int argc, char *argv[])
   
    write(sum_prog, N, "risultati/sigmaMedia.txt");
    write(err_prog, N, "risultati/sigmaErrore.txt");   
-   
    
    chiSquareTest();
    write(chiSquare, N, "risultati/chiQuadro.txt");

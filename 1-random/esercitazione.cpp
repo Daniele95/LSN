@@ -84,7 +84,6 @@ void lorenziane() {
       outfileLCTexp.close();
    }
 
-
    double G = 1.;
    for(int l=0; l<4; l++) {
 
@@ -103,6 +102,10 @@ void lorenziane() {
       }
       outfileLCTlor.close();
    }
+}
+
+void piGreco()
+{
 
    double Length = 1.;
    double d = 2.;
@@ -114,13 +117,11 @@ void lorenziane() {
    for (int i = 0; i < M_campionamenti; i++) 
         b[i] = 1.*d*rnd.Rannyu(); 
        // U[0,1) uniform distribution
-   
 
    vector<double> l(M_campionamenti);
 
    for (int i = 0; i < M_campionamenti; i++) 
       l[i] = Length*sin(2.*rnd.UnPhiAR());
-   
 
    vector<double> ave_(N_blocchi);
    vector<double> av2_(N_blocchi);
@@ -152,10 +153,14 @@ void lorenziane() {
     }
 
     ofstream outfile13("risultati/outfile13.txt");
+    int intero=0;
     for (int i = 0; i < N_blocchi; ++i) {
         outfile13 << sum_prog_[i] << "\t" << err_prog_[i] << endl;
-
-    }
+        intero=i;
+        }
+    cout << "pigreco = "<<sum_prog_[intero] 
+    	<< ", con errore = "<<err_prog_[intero]<<endl;
+    
     outfile13.close();
 }
 
@@ -278,9 +283,10 @@ int main (int argc, char *argv[])
    int sumChiSquare = 0;
    for ( int j = 0; j < N; j++ )
       sumChiSquare += chiSquare[j];      
-   cout << sumChiSquare << endl;
+   //cout <<"chi quadro = "<< sumChiSquare << endl;
    
    lorenziane();
+   piGreco();
    
    return 0;
 }

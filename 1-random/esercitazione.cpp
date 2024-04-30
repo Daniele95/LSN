@@ -7,11 +7,11 @@
 #include "../utils/utils.h"
 
 using namespace std;
+Random rnd;
 
 const int M = 100000;
-static float r[M];         
+ float r[M];         
 
-Random rnd;
 
 void tiroCasuali() {
 
@@ -46,18 +46,119 @@ void tiroCasuali() {
    
 }
 
-const int N = 100;
-const int L = int(M/N);             // suddivido i M numeri casuali
-                                    // in N esperimenti contenenti
-                   // ciascuno L numeri casuali
-static float ave[N];                // ciascun esperimento ha come output
-static float av2[N];                // una media e una varianza
-
 float integranda(float r_k, int esercizio)
 {
    if ( esercizio == 1 ) return r_k;
    if ( esercizio == 2 ) return pow(r_k-0.5,2);
    else return 0.;
+}
+
+const int Niniziale=100;
+const int Liniziale= int(M/Niniziale);
+float ave[Niniziale];                // ciascun esperimento ha come output
+float av2[Niniziale];                // una media e una varianza
+float sum_prog[Niniziale];           // analisi dati: ogni nuovo esperimento
+float su2_prog[Niniziale];           // calcolo media e deviazione standard
+float err_prog[Niniziale];           // su tutti gli esperimenti passati
+	
+void esperimenti( int N, int L, int esercizio )
+{
+   
+   for (int i = 0; i < N; i ++)     // in ciascun esperimento
+   {
+      float sum = 0;
+      
+      for (int j = 0; j < L; j ++)  // calcolo l'integrale
+      {                             // su un gruppo di L numeri casuali
+         int k = j + i * L;
+         sum += integranda( r[k], esercizio );
+      }
+      
+      ave[i] = sum / L;
+      av2[i] = pow((ave[i]),2);
+   }
+   
+}
+
+void analisiDati()
+{
+   for ( int i = 0; i < Niniziale; i ++ )
+   {
+      for ( int j = 0; j < i + 1; j++ )
+      {
+         sum_prog[i] += ave[j];
+         su2_prog[i] += av2[j];
+      }
+      sum_prog[i] /= i + 1;
+      su2_prog[i] /= i + 1;
+      err_prog[i] = error( sum_prog, su2_prog, i );
+   }
+}
+
+// N = 100, L = 1000
+float chiSquare[Niniziale];
+
+void chiSquareTest()
+{
+   for ( int i = 0; i < Niniziale; i++ )
+   {
+      int howManyInRange = 0;
+      for ( int j = 0; j < Liniziale; j++ )
+      {
+         int k = j + i * Liniziale;
+         // conto quanti tra i 1000 numeri casuali nel blocco i
+         // ricadono tra i/100 e (i+1)/100: dovrebbero essere
+         // 1000/100 = 10
+         if ( ( r[ k ] > float(i) / Niniziale ) && ( r[ k ] < float( i + 1 ) / Niniziale ) )
+            howManyInRange ++;
+      }
+      chiSquare[i] = pow( howManyInRange - Liniziale/Niniziale, 2) 
+      	/ (Liniziale/Niniziale);
+   }
+}
+
+void calcolaIntegrale()
+{
+	 int N = Niniziale;
+	 int L = Liniziale;             // suddivido i M numeri casuali
+		                            // in N esperimenti contenenti
+		           // ciascuno L numeri casuali
+
+   int esercizio = 1;
+   tiroCasuali();            // tiro M casuali
+
+   rnd.SetSeed();   
+   int seed=23; 
+   rnd.SetPrimesCouple(seed);
+
+   esperimenti(N,L, esercizio );         // riempio gli array  
+   analisiDati();
+  
+   write(sum_prog, N, "risultati/rMedia.txt");
+   write(err_prog, N, "risultati/rErrore.txt");
+   
+   for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
+   {
+      ave[i] = 0.;
+      av2[i] = 0.;
+      sum_prog[i] = 0.;
+      su2_prog[i] = 0.;
+      err_prog[i] = 0.;
+   }
+   
+   esercizio = 2;
+   esperimenti(N,L, esercizio );         
+   analisiDati();
+  
+   write(sum_prog, N, "risultati/sigmaMedia.txt");
+   write(err_prog, N, "risultati/sigmaErrore.txt");   
+   
+   chiSquareTest();
+   write(chiSquare, N, "risultati/chiQuadro.txt");
+   int sumChiSquare = 0;
+   for ( int j = 0; j < N; j++ )
+      sumChiSquare += chiSquare[j];      
+   //cout <<"chi quadro = "<< sumChiSquare << endl;
 }
 
 void lorenziane() 
@@ -102,176 +203,92 @@ void lorenziane()
    }
 }
 
-void piGreco()
-{
-   double Length = 1.;
-   double d = 2.;
-   int M_campionamenti = 1e5;
-   int N_blocchi = 1e2;
-   int L_step = M_campionamenti/N_blocchi; 
 
-   vec b(M_campionamenti);
-   for (int i = 0; i < M_campionamenti; i++) 
-        b(i) = 1.*d*rnd.Rannyu(); 
+float buffon() {
 
-   vec l(M_campionamenti);
-   for (int i = 0; i < M_campionamenti; i++) 
-      l(i) = Length*sin(2.*rnd.UnPhiAR());
+ int M_campionamenti = 100000;
+ int N_blocchi = 100;
+ int L_stepblocco = int(M_campionamenti/N_blocchi);
 
-   vec ave_(N_blocchi);
-   vec av2_(N_blocchi);
-   vec sum_prog_(N_blocchi); //nuovi vettori
-   vec su2_prog_(N_blocchi);
-   vec err_prog_(N_blocchi);
+vec dati(N_blocchi);
+vec medie(N_blocchi);
+vec deviazioni(N_blocchi);
 
-    for (int i = 0; i < N_blocchi; i++) {
-        int Nhit = 0;
-        for (int j = 0; j < L_step; j++) {
-            int k = j + i * L_step;
-            if ( b(k)+l(k) < 0. || b(k)+l(k) > d ) 
-                Nhit++;
-        }
-        ave_(i) = 2.0 * Length * L_step / (d * Nhit); 
-        // calculation of pi for the i-th block
-        av2_(i) = pow(ave_(i), 2);
-    }
 
-   for (int i = 0; i < N_blocchi; i++) {
-        for (int j = 0; j <= i; j++) {
-            sum_prog_(i) += ave_(j);
-            su2_prog_(i) += av2_(j);
-        }
-        sum_prog_(i) /=(i+1);
-        su2_prog_(i) /=(i+1);
-        err_prog_(i) = error(sum_prog_, su2_prog_, i);
-    }
 
-    ofstream outfile13("risultati/outfile13.txt");
-    int intero=0;
-    for (int i = 0; i < N_blocchi; ++i) {
-        outfile13 << sum_prog_(i) << "\t" << err_prog_(i) << endl;
-        intero=i;
-        }
-    cout << "pigreco = "<<sum_prog_(intero) 
-    	<< ", con errore = "<<err_prog_(intero)<<endl;
-    outfile13.close();
-}
+   float d = 1.2; // spaziatura linee
+   float l = 1.; // lunghezza ago
 
-void esperimenti( int esercizio )
-{
+   float o=0.,x=0.,y=0.,r=0.,puntaAgo=0.;
+
+   int tiri = 0;
    
-   for (int i = 0; i < N; i ++)     // in ciascun esperimento
+   
+   for(int i=0; i<N_blocchi; i++)
    {
-      float sum = 0;
       
-      for (int j = 0; j < L; j ++)  // calcolo l'integrale
-      {                             // su un gruppo di L numeri casuali
-         int k = j + i * L;
-         sum += integranda( r[k], esercizio );
+      while (tiri<L_stepblocco)
+      {
+         o = rnd.Rannyu()*d;
+         // punto in un quadrato di raggio 2L
+         x = (2.*rnd.Rannyu()-1.)*l;
+         y = (2.*rnd.Rannyu()-1.)*l;
+         
+         r = sqrt(pow(x,2)+pow(y,2));
+         
+         puntaAgo = o+(x/r)*l;
+         
+         if( r<l )
+         {
+            tiri++;
+            if (puntaAgo<0. || puntaAgo>d)
+               dati(i) ++;               
+         }
+      
       }
       
-      ave[i] = sum / L;
-      av2[i] = pow((ave[i]),2);
+      dati(i)  /= float(L_stepblocco);
+      
+      if(i==0) medie[i] = dati(i);
+      
+      for (int j=0; j<i; j++) {
+         medie(i) += dati(j);
+         if(i>0) deviazioni(i) += pow(dati(j),2);
+      }
+      if(i>0) {
+         medie[i] /= float(i);
+         deviazioni(i) = deviazioni(i)/float(i) - pow(medie(i),2);
+         deviazioni(i) = sqrt(deviazioni(i) / float( i));
+      }
+      
+      
+      tiri = 0.;
    }
+   
+   cout << medie[89]<<endl;
+   cout <<deviazioni[89]<<endl;
+   float P = medie[99];
+   //rnd.SaveSeed();
+   
+   writeMeanError(medie, deviazioni, "risultati/buffon.txt");
+   return (2.*l)/(P*d) ;
    
 }
 
-float error( float* AV, float* AV2, int n )
-{
-   if ( n == 0 ) return 0.;
-   else return sqrt(  ( AV2[ n ] - pow( AV[ n ], 2) ) / n );
-}
-
-static float sum_prog[N];           // analisi dati: ogni nuovo esperimento
-static float su2_prog[N];           // calcolo media e deviazione standard
-static float err_prog[N];           // su tutti gli esperimenti passati
-                                    
-void analisiDati()
-{
-   for ( int i = 0; i < N; i ++ )
-   {
-      for ( int j = 0; j < i + 1; j++ )
-      {
-         sum_prog[i] += ave[j];
-         su2_prog[i] += av2[j];
-      }
-      sum_prog[i] /= i + 1;
-      su2_prog[i] /= i + 1;
-      err_prog[i] = error( sum_prog, su2_prog, i );
-   }
-}
-
-void write (float* array, int arrayLength, string nomeFile)
-{
-   std::ofstream ofile;
-   ofile.open(nomeFile);
-
-   for(int i=0; i<arrayLength; i++)
-      ofile << array[i] << std::endl;
-
-   ofile.close();   
-}
-// N = 100, L = 1000
-static float chiSquare[N];
-
-void chiSquareTest()
-{
-   for ( int i = 0; i < N; i++ )
-   {
-      int howManyInRange = 0;
-      for ( int j = 0; j < L; j++ )
-      {
-         int k = j + i * L;
-         // conto quanti tra i 1000 numeri casuali nel blocco i
-         // ricadono tra i/100 e (i+1)/100: dovrebbero essere
-         // 1000/100 = 10
-         if ( ( r[ k ] > float(i) / N ) && ( r[ k ] < float( i + 1 ) / N ) )
-            howManyInRange ++;
-      }
-      chiSquare[i] = pow( howManyInRange - L/N, 2) / (L/N);
-      
-   }
-}
 int main (int argc, char *argv[])
 {
-   int esercizio = 1;
-   tiroCasuali();            // tiro M casuali
-
+   
+   
    rnd.SetSeed();   
    int seed=23; 
    rnd.SetPrimesCouple(seed);
-
-   esperimenti( esercizio );         // riempio gli array  
-   analisiDati();
-  
-   write(sum_prog, N, "risultati/rMedia.txt");
-   write(err_prog, N, "risultati/rErrore.txt");
-   
-   for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
-   {
-      ave[i] = 0.;
-      av2[i] = 0.;
-      sum_prog[i] = 0.;
-      su2_prog[i] = 0.;
-      err_prog[i] = 0.;
-   }
-   
-   esercizio = 2;
-   esperimenti( esercizio );         
-   analisiDati();
-  
-   write(sum_prog, N, "risultati/sigmaMedia.txt");
-   write(err_prog, N, "risultati/sigmaErrore.txt");   
-   
-   chiSquareTest();
-   write(chiSquare, N, "risultati/chiQuadro.txt");
-   int sumChiSquare = 0;
-   for ( int j = 0; j < N; j++ )
-      sumChiSquare += chiSquare[j];      
-   //cout <<"chi quadro = "<< sumChiSquare << endl;
-   
+   calcolaIntegrale();
    lorenziane();
-   piGreco();
+   
+   
+   cout << buffon() << endl;
+   
+   
    
    return 0;
 }

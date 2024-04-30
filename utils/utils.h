@@ -16,5 +16,11 @@ void mediaBlocchi(vec energia, vec& energiaMediaBlocchi,
  
 double error(vec media, vec mediaQuadra, int i) ;
 
-
+float error( float* AV, float* AV2, int n );
+void writeMeanError(vec sum_prog, 
+	vec err_prog, string stringa);
+void mediaBlocchi2(vec daMediare, int Nblocchi, 
+	int Lstepblocco,string risultati);
+	
+void write (float* array, int arrayLength, string nomeFile);
 #endif

@@ -1,5 +1,6 @@
-CC = g++
+CC = g++ 
 CFLAGS = -Wall -O3 --std=c++11
+AFLAGS = -larmadillo
 
 esercitazione.exe : esercitazione.o random.o ../utils/utils.o
 	$(CC) random.o esercitazione.o ../utils/utils.o -o esercitazione.exe

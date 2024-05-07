@@ -52,6 +52,7 @@ void BlackScholes()
    vec P2(M);
    vec SpesaD(M);
 
+
    for (int i=0; i<M; i++)
    {
       SpesaD[i] = S0;
@@ -65,6 +66,7 @@ void BlackScholes()
       S_[0] = S0;
       float t[nTempi];
       t[0] = 0.;
+      double Zi = rnd.Gauss(0,1);
       for (int j=0; j<nTempi; j++)
       {
          t[j+1] = (float(j)+1.)*T/float(nTempi);
@@ -75,7 +77,7 @@ void BlackScholes()
          
          // altre operazioni
          SpesaD(i) = SpesaD(i)*exp((Mean-1./2.*sigma*sigma)
-         	*Incremento + sigma*z*Incremento);
+         	*Incremento + sigma*Zi*Incremento);
          
       }
       S[i] = S_[nTempi];
@@ -98,7 +100,8 @@ void BlackScholes()
    C /= M;
    P /= M;
      
-   cout << C << endl<<P<<endl;
+   //cout << C << endl<<P<<endl;
+     
      mediaBlocchi2( Co,  N, 
 	 L,"risultati/outfileC.txt");
      mediaBlocchi2( Po,  N, 
@@ -107,19 +110,7 @@ void BlackScholes()
 	 L,"risultati/outfileC2.txt");
      mediaBlocchi2( P2,  N, 
 	 L,"risultati/outfileP2.txt");
-	
-   //rnd.SaveSeed();
 
-
-/* perché mi viene 
-18.7554
-0.0895789
- invece che i risultati giusti
-  == BLACK-SCHOLES ==
-call:  14.975790778311286
-put:  5.4595325819072364
- ???
- */
 
 }
 
@@ -127,106 +118,16 @@ put:  5.4595325819072364
 double S(double S0, double m, double s, double t, double W) {
    return S0*exp((m-s*s/2.)*t+s*W);
 }
-/*
-
-void blackScholes2() {
 
 
-   //ESERCIZIO 3.1.1
-
-   int M = 1e5;              //Total number of throws
-   int NBlocks = 1e2;                 // Number of blocks
-   int L = M/NBlocks;    		//# of numbers in a block
-
-   //Parametri caratteristici
-   double Mean = 0.1;
-   double Sigma = 0.25;
-   double S0 = 100.;
-   double T = 1.;
-   double k = 100.;
-
-
-   vec W(M);
-   for (int i=0; i<M; i++) {
-      W(i) = rnd.Gauss(0,T);
-   }   
-
-   vec Spesa(M);
-   for (int i=0; i<M; i++) {
-      Spesa(i) = S(S0,Mean,Sigma,T,W(i));
-   }   
-
-   vec C(M);
-   vec P(M);
-   for (int i=0; i<M; i++) {
-      C(i) = exp(-Mean*T)*Max(0.,Spesa(i)-k);
-      P(i) = exp(-Mean*T)*Max(0.,k-Spesa(i));
-   }  
-
-   vec MeanC(NBlocks);
-   vec MeanP(NBlocks);
-   vec ErrorC(NBlocks);
-   vec ErrorP(NBlocks);
-
-   mediaBlocchi(C,MeanC,ErrorC,NBlocks,L);
-   mediaBlocchi(P,MeanP,ErrorP,NBlocks,L);
-
-   ofstream outfile311("risultati/outfile311.txt");
-    for (int i = 0; i < NBlocks; ++i) 
-       outfile311 << MeanC(i) << "\t" << ErrorC(i) 
-       	<< "\t" << MeanP(i) << "\t" << ErrorP(i) << endl;
-    outfile311.close();
-
-
-   //ESERCIZIO 3.1.2
-
-   int NIntervalli = 100;
-   double Incremento = T/NIntervalli;
-   
-   vec SpesaD(M);
-   for (int i=0; i<M; i++) {
-      SpesaD[i] = S0;
-   }      
-
-   for (int i=0; i<M; i++) {
-      double Zi = rnd.Gauss(0,1);
-      for (int j=0; j<NIntervalli; j++) {
-         SpesaD(i) = SpesaD(i)*exp((Mean-1./2.*Sigma*Sigma)
-         	*Incremento + Sigma*Zi*Incremento);
-      }   
-   }   
-
-   for (int i=0; i<M; i++) {
-      C(i) = exp(-Mean*T)*Max(0.,SpesaD(i)-k);
-      P(i) = exp(-Mean*T)*Max(0.,k-SpesaD(i));
-   }  
-   MeanC.fill(0.);
-   MeanP.fill(0.);
-   ErrorC.fill(0.);
-   ErrorP.fill(0.);
-
-   mediaBlocchi(C,MeanC,ErrorC,NBlocks,L);
-   mediaBlocchi(P,MeanP,ErrorP,NBlocks,L);
-
-   ofstream outfile312("risultati/outfile312.txt");
-    for (int i = 0; i < NBlocks; ++i) 
-       outfile312 << MeanC(i) << "\t" << ErrorC(i) 
-       	<< "\t" << MeanP(i) << "\t" << ErrorP(i) << endl;
-    outfile312.close();
-
-
-}
-*/
-int main (int argc, char *argv[]){
-
-
+int main ()
+{
    rnd.SetSeed();   
    int seed=23; 
    rnd.SetPrimesCouple(seed);
    
    BlackScholes();
 
-  // blackScholes2();
 
    return 0;
 }

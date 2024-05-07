@@ -8,107 +8,56 @@
 
 using namespace std;
 Random rnd;
-
-const int M = 100000;
- float r[M];         
-
-float integranda(float r_k, int esercizio)
+void calcolaIntegrale() 
 {
-   if ( esercizio == 1 ) return r_k;
-   if ( esercizio == 2 ) return pow(r_k-0.5,2);
-   else return 0.;
-}
 
-const int Niniziale=100;
-const int Liniziale= int(M/Niniziale);
-float ave[Niniziale];                // ciascun esperimento ha come output
-float av2[Niniziale];                // una media e una varianza
-float sum_prog[Niniziale];           // analisi dati: ogni nuovo esperimento
-float su2_prog[Niniziale];           // calcolo media e deviazione standard
-float err_prog[Niniziale];           // su tutti gli esperimenti passati
-	
-void esperimenti( int N, int L, int esercizio )
-{
-   for (int i = 0; i < N; i ++)     // in ciascun esperimento
+   int M = 1e6;              //Total number of throws
+   int N = 1e2;                 // Number of blocks
+   int L = M/N;    		//# of numbers in a block
+
+   vec r(M);
+   for (int i = 0; i < M; i++)  r(i) = rnd.Rannyu(); 
+   mediaBlocchi2(r,N,L,"risultati/rMedia.txt");
+
+   vec s(M);
+   for(int i=0; i<M; i++)  s(i) = pow(r(i)-0.5,2);
+   mediaBlocchi2(s, N, L,"risultati/rErrore.txt");
+
+
+   //chi quadro
+
+   int Nchi=1000; 
+   int Lnew = M/Nchi;	
+   mat matrix(N, Nchi,fill::zeros);
+   for (int j = 0; j < Nchi; j++) 
    {
-      float sum = 0;
-      for (int j = 0; j < L; j ++)  // calcolo l'integrale
-      {                             // su un gruppo di L numeri casuali
-         int k = j + i * L;
-         sum += integranda( r[k], esercizio );
+      vec VtoSort=r.subvec(j * Lnew, (j + 1) * Lnew - 1);
+      VtoSort = sort(VtoSort);
+      for (int i = 0; i < N; i++) {
+         double count = 0;
+         for (int k = 0; k < Lnew; k++) {
+            if ((i / double(N) <= VtoSort(k)) && (VtoSort(k) < (i + 1) / double(N))) {
+                count++;
+            }
+         }
+         matrix(i,j) = count;
       }
-      ave[i] = sum / L;
-      av2[i] = pow((ave[i]),2);
    }
-}
 
-void analisiDati()
-{
-   for ( int i = 0; i < Niniziale; i ++ )
+   vec ChiVect(Nchi);
+   for (int j = 0; j < Nchi; j++) 
    {
-      for ( int j = 0; j < i + 1; j++ )
-      {
-         sum_prog[i] += ave[j];
-         su2_prog[i] += av2[j];
-      }
-      sum_prog[i] /= i + 1;
-      su2_prog[i] /= i + 1;
-      err_prog[i] = error( sum_prog, su2_prog, i );
+      double sum = 0.;
+      for (int i = 0; i < N; i++) 
+          sum += pow(matrix(i,j) - double(Lnew/N), 2) / double(double(Lnew)/double(N));
+      
+      ChiVect(j) = sum;
    }
-}
 
-// N = 100, L = 1000
-float chiSquare[Niniziale];
-void chiSquareTest()
-{
-   for ( int i = 0; i < Niniziale; i++ )
-   {
-      int howManyInRange = 0;
-      for ( int j = 0; j < Liniziale; j++ )
-      {
-         int k = j + i * Liniziale;
-         // conto quanti tra i 1000 numeri casuali nel blocco i
-         // ricadono tra i/100 e (i+1)/100: dovrebbero essere
-         // 1000/100 = 10
-         if ( ( r[ k ] > float(i) / Niniziale ) && ( r[ k ] < float( i + 1 ) / Niniziale ) )
-            howManyInRange ++;
-      }
-      chiSquare[i] = pow( howManyInRange - Liniziale/Niniziale, 2) 
-      	/ (Liniziale/Niniziale);
-   }
-}
+   ofstream outfileChi2("risultati/chiQuadro.txt");
+   for (int i = 0; i < Nchi; ++i) outfileChi2 << ChiVect(i) << endl;
+   outfileChi2.close();
 
-void calcolaIntegrale()
-{
-   int N = Niniziale;
-   int L = Liniziale;  // suddivido i M numeri casuali
-   // in N esperimenti contenenti
-   // ciascuno L numeri casuali
-   int esercizio = 1;
-   for(int i=0; i<M; i++) r[i] = rnd.Rannyu();
-   esperimenti(N,L, esercizio );         // riempio gli array  
-   analisiDati();
-   write(sum_prog, N, "risultati/rMedia.txt");
-   write(err_prog, N, "risultati/rErrore.txt");
-   for ( int i = 0; i < N; i++ )     // resetto gli accumulatori
-   {
-      ave[i] = 0.;
-      av2[i] = 0.;
-      sum_prog[i] = 0.;
-      su2_prog[i] = 0.;
-      err_prog[i] = 0.;
-   }
-   esercizio = 2;
-   esperimenti(N,L, esercizio );         
-   analisiDati();
-   write(sum_prog, N, "risultati/sigmaMedia.txt");
-   write(err_prog, N, "risultati/sigmaErrore.txt");   
-   chiSquareTest();
-   write(chiSquare, N, "risultati/chiQuadro.txt");
-   int sumChiSquare = 0;
-   for ( int j = 0; j < N; j++ )
-      sumChiSquare += chiSquare[j];      
-   //cout <<"chi quadro = "<< sumChiSquare << endl;
 }
 
 void lorenziane() 

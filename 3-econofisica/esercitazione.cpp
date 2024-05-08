@@ -103,13 +103,13 @@ void BlackScholes()
    //cout << C << endl<<P<<endl;
      
      mediaBlocchi2( Co,  N, 
-	 L,"risultati/outfileC.txt");
+	 L,"risultati/call.txt");
      mediaBlocchi2( Po,  N, 
-	 L,"risultati/outfileP.txt");
+	 L,"risultati/put.txt");
      mediaBlocchi2( C2,  N, 
-	 L,"risultati/outfileC2.txt");
+	 L,"risultati/callRicorsivo.txt");
      mediaBlocchi2( P2,  N, 
-	 L,"risultati/outfileP2.txt");
+	 L,"risultati/putRicorsivo.txt");
 
 
 }

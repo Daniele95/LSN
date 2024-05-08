@@ -1,0 +1,17 @@
+/* Change font for text output */
+.output {
+    font-family: Arial, sans-serif;
+    /* Additional font styles if needed */
+}
+
+/* Change font for code cells */
+.CodeMirror pre {
+    font-family: 'Courier New', monospace;
+    /* Additional font styles if needed */
+}
+
+/* Change font for markdown cells */
+.text_cell_render {
+    font-family: 'Times New Roman', serif;
+    /* Additional font styles if needed */
+}

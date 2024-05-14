@@ -594,7 +594,7 @@ void System :: measure(){ // Measure properties
           if(_measure_penergy)  
             penergy_temp +=1.0/pow(dr,12) - 1.0/pow(dr,6); // POTENTIAL ENERGY
             // PRESSURE for EXERCISE 4
-            virial += 48 * (1.0/pow(dr,12) - 0.5*1.0/pow(dr,6) );
+            virial += 48 * (1.0/pow(dr,14) - 0.5*1.0/pow(dr,8) )/318;
         }
       }
     }

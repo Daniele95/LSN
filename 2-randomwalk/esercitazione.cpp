@@ -9,7 +9,7 @@
 
 using namespace std;
 
-const int M_campionamenti = 100000;
+const int M_campionamenti = 1000000;
 const int N_blocchi = 100;
 const int L_step = int(M_campionamenti/N_blocchi);
 float dati[N_blocchi];
@@ -32,6 +32,12 @@ double Integrand(double x) {
 double Prob(double x) {
    return 2.*(1.-x);
 }
+
+//Generatore di numeri distribuiti come la funzione Prob
+double LinGen(double x) {
+   return 1-sqrt(1-x);
+}
+
 void integraleMontecarlo()
 { 
   	vec r=zeros(M_campionamenti); 
@@ -62,6 +68,40 @@ void integraleMontecarlo()
    int L = M_campionamenti/N;  //# of numbers in a block
    mediaBlocchi2(r, N, L,"risultati/campionamentoUniforme.txt");
    mediaBlocchi2(s, N, L,"risultati/importanceSampling.txt");
+}
+
+
+void integraleMonteCarlo2(){
+
+   //ESERCIZIO 2.1.1
+
+   int M = 1e6;              //Total number of throws
+   int N = 1e2;                 // Number of blocks
+   int L = M/N;    		//# of numbers in a block
+ 
+
+   //contiene i dati casuali grezzi
+   vec x(M);
+   vec r(M);
+   for (int i = 0; i < M; i++) {
+      x(i) = rnd.Rannyu();
+      r(i) = Integrand(x(i)); // U[0,1) uniform distribution
+   }
+
+   //tengo salvati nel main solo i vettori contenenti i dati che poi verranno salvati su file. Gli altri creati e distrutti all'interno della funzione MeanAndErr	
+   vec sum_prog=zeros(N);
+   vec err_prog=zeros(N);
+
+   mediaBlocchi2(r, N, L,"risultati/campionamentoUniforme.txt");
+
+   //ESERCIZIO 2.1.2
+
+   vec s(M);
+   for (int i = 0; i < M; i++) 
+        s(i) = Integrand( LinGen(x(i)) ); // U[0,1) uniform distribution
+   
+
+   mediaBlocchi2(s, N, L,"risultati/campionamentoUniforme.txt");
 }
 
 
@@ -160,9 +200,9 @@ void mediaBlocchiCammino(string risultati)
 int main ()
 {
    rnd.SetSeed();   
-   int seed=23; 
+   int seed=12; 
    rnd.SetPrimesCouple(seed);
-   integraleMontecarlo();
+   integraleMonteCarlo2();
    randomWalk(1);
    randomWalk(0);
    return 0;

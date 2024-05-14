@@ -594,7 +594,7 @@ void System :: measure(){ // Measure properties
           if(_measure_penergy)  
             penergy_temp +=1.0/pow(dr,12) - 1.0/pow(dr,6); // POTENTIAL ENERGY
             // PRESSURE for EXERCISE 4
-            virial += 48 * (1.0/pow(dr,14) - 0.5*1.0/pow(dr,8) )/318;
+            virial += 48 * (1.0/pow(dr,14) - 0.5*1.0/pow(dr,8) );
         }
       }
     }
@@ -630,7 +630,7 @@ void System :: measure(){ // Measure properties
     _measurement(_index_temp) = (2.0/3.0) * kenergy_temp;
   // PRESSURE : TO BE FIXED IN EXERCISE 4
   if (_measure_pressure) 
-    _measurement(_index_pressure) = virial;
+    _measurement(_index_pressure) = _rho*_temp +virial/3./ double(_npart);
     
   // MAGNETIZATION /////////////////////////////////////////////////////////////
 // TO BE FIXED IN EXERCISE 6

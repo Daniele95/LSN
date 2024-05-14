@@ -37,6 +37,10 @@ double Prob(double x) {
 double LinGen(double x) {
    return (1-sqrt(1-x));
 }
+
+double Function(double x) {
+   return M_PI*cos(M_PI*1./2.*x)/(4.*(1.-x));
+}
 /*
 void integraleMontecarlo()
 { 
@@ -75,7 +79,7 @@ void integraleMonteCarlo2(){
 
    //ESERCIZIO 2.1.1
 
-   int M = 1e8;              //Total number of throws
+   int M = 1e7;              //Total number of throws
    int N = 1e2;                 // Number of blocks
    int L = M/N;    		//# of numbers in a block
  
@@ -92,7 +96,7 @@ void integraleMonteCarlo2(){
    vec s(M);
    for (int i = 0; i < M; i++) {
       x(i) = rnd.Rannyu();
-        s(i) = Integrand( LinGen(x(i)) )-.2732; // U[0,1) uniform distribution
+        s(i) = Function( LinGen(x(i)) ); // U[0,1) uniform distribution
 }
    mediaBlocchi2(s, N, L,"risultati/importanceSampling.txt");
 }

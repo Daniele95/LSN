@@ -688,11 +688,12 @@ void System :: averages(int blk){
     average  = _average(_index_tenergy);
     sum_average = _global_av(_index_tenergy);
     sum_ave2 = _global_av2(_index_tenergy);
-    coutf << setw(12) << blk
-          << setw(12) << average
-          << setw(12) << sum_average/double(blk)
-          << setw(12) << this->error(sum_average, sum_ave2, blk) << endl;
+    coutf << setw(20) << blk
+          << setw(20) << fixed<<setprecision(12)<< average
+          << setw(20) << sum_average/double(blk)
+          << setw(20) << this->error(sum_average, sum_ave2, blk) << scientific << endl;
     coutf.close();
+    
   }
   // TEMPERATURE ///////////////////////////////////////////////////////////////
   if (_measure_temp){
@@ -700,10 +701,10 @@ void System :: averages(int blk){
     average  = _average(_index_temp);
     sum_average = _global_av(_index_temp);
     sum_ave2 = _global_av2(_index_temp);
-    coutf << setw(12) << blk
-          << setw(12) << average
-          << setw(12) << sum_average/double(blk)
-          << setw(12) << this->error(sum_average, sum_ave2, blk) << endl;
+    coutf << setw(20) << blk
+          << setw(20) <<average
+          << setw(20) << sum_average/double(blk)
+          << setw(20) << this->error(sum_average, sum_ave2, blk)<< endl;
     coutf.close();
   }
   // PRESSURE for EXERCISE 4:
@@ -712,10 +713,10 @@ void System :: averages(int blk){
     average  = _average(_index_pressure);
     sum_average = _global_av(_index_pressure);
     sum_ave2 = _global_av2(_index_pressure);
-    coutf << setw(12) << blk
-          << setw(12) << average
-          << setw(12) << sum_average/double(blk)
-          << setw(12) << this->error(sum_average, sum_ave2, blk) << endl;
+    coutf << setw(20) << blk
+          << setw(20) << average
+          << setw(20) << sum_average/double(blk)
+          << setw(20) << this->error(sum_average, sum_ave2, blk) << endl;
     coutf.close();
   }
   // GOFR //////////////////////////////////////////////////////////////////////
